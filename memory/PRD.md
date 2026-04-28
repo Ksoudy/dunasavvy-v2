@@ -50,6 +50,8 @@ Build a Chrome Extension (Manifest V3) that acts as a real-time price-comparison
 - ✅ Chrome MV3 extension (scraper + service-worker + offscreen + popup)
 - ✅ React dashboard with 4 scenarios, Scraper Health widget, AI-match button, animations, dark teal theme
 - ✅ Documentation (extension README)
+- ✅ **Good-citizen layer (2026-02 patch)**: robots.txt parser + 12h cache + alarm-driven refresh; every cross-site fetch and scrape upload gated by `isUrlAllowed()`; wildcards & `$` anchors supported (7/7 unit tests passing)
+- ✅ **Trademark guardrail**: nominative-fair-use disclaimer in popup footer ("not affiliated with…")
 
 ## Backlog / Next
 - P1: Live extension testing on real DoorDash/UberEats/Grubhub pages (selectors will drift)

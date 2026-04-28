@@ -1,9 +1,13 @@
 // DunaSavvy — Background service worker (the Router)
-// Coordinates scraping events, virtual-cart state, and cross-platform fetches.
+// Coordinates scraping events, virtual-cart state, cross-platform fetches,
+// and the "Good Citizen" robots.txt gate.
 
 import { BACKEND_URL, API, PLATFORMS, FETCH_DELAY_MS, FETCH_JITTER_MS } from "./config.js";
 
 const SESSION_KEY = "duna_session_id";
+const ROBOTS_CACHE_KEY = "duna_robots_cache";
+const ROBOTS_TTL_MS = 24 * 60 * 60 * 1000;       // 24h
+const USER_AGENT = "DunaSavvy";
 
 async function getSessionId() {
   const { [SESSION_KEY]: sid } = await chrome.storage.local.get(SESSION_KEY);
@@ -17,7 +21,88 @@ function jitterDelay() {
   return new Promise((r) => setTimeout(r, FETCH_DELAY_MS + Math.random() * FETCH_JITTER_MS));
 }
 
-// Offscreen-document helper for cross-site fetches
+// ---------- Robots.txt: Good Citizen Protocol ----------
+function parseRobots(txt) {
+  // Returns {disallow: string[], allow: string[]} merged from User-agent: * and DunaSavvy blocks.
+  const disallow = [];
+  const allow = [];
+  let active = false;
+  const lines = (txt || "").split(/\r?\n/);
+  for (const raw of lines) {
+    const line = raw.replace(/#.*$/, "").trim();
+    if (!line) { active = false; continue; }
+    const [rawKey, ...rest] = line.split(":");
+    const key = rawKey.trim().toLowerCase();
+    const val = rest.join(":").trim();
+    if (key === "user-agent") {
+      const ua = val.toLowerCase();
+      active = (ua === "*" || ua.includes(USER_AGENT.toLowerCase()));
+    } else if (active && key === "disallow" && val) {
+      disallow.push(val);
+    } else if (active && key === "allow" && val) {
+      allow.push(val);
+    }
+  }
+  return { disallow, allow };
+}
+
+async function fetchRobotsFor(host) {
+  try {
+    const res = await fetch(`https://${host}/robots.txt`, { credentials: "omit" });
+    if (!res.ok) return { disallow: [], allow: [], fetched_at: Date.now(), status: res.status };
+    const txt = await res.text();
+    return { ...parseRobots(txt), fetched_at: Date.now(), status: res.status };
+  } catch (e) {
+    return { disallow: [], allow: [], fetched_at: Date.now(), error: String(e) };
+  }
+}
+
+async function ensureRobotsFresh() {
+  const { [ROBOTS_CACHE_KEY]: cache = {} } = await chrome.storage.local.get(ROBOTS_CACHE_KEY);
+  const now = Date.now();
+  let dirty = false;
+  for (const [plat, meta] of Object.entries(PLATFORMS)) {
+    const entry = cache[plat];
+    if (!entry || now - entry.fetched_at > ROBOTS_TTL_MS) {
+      cache[plat] = await fetchRobotsFor(meta.host);
+      dirty = true;
+    }
+  }
+  if (dirty) await chrome.storage.local.set({ [ROBOTS_CACHE_KEY]: cache });
+  return cache;
+}
+
+function pathMatches(rule, pathname) {
+  // Minimal robots.txt prefix match with `*` and `$` support.
+  if (!rule) return false;
+  if (rule === "/") return true;
+  // wildcard support
+  if (rule.includes("*") || rule.endsWith("$")) {
+    const pattern = "^" + rule.replace(/\$$/, "_END_").replace(/[.+?^{}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace("_END_", "$");
+    return new RegExp(pattern).test(pathname);
+  }
+  return pathname.startsWith(rule);
+}
+
+async function isUrlAllowed(url) {
+  try {
+    const u = new URL(url);
+    const cache = await ensureRobotsFresh();
+    const platEntry = Object.entries(PLATFORMS).find(([, m]) => u.hostname.endsWith(m.host));
+    if (!platEntry) return true; // not a tracked platform
+    const [, ] = platEntry;
+    const rules = cache[platEntry[0]] || { disallow: [], allow: [] };
+    // Allow rules win ties (per spec spirit)
+    const allowed = rules.allow.some((r) => pathMatches(r, u.pathname));
+    if (allowed) return true;
+    const blocked = rules.disallow.some((r) => pathMatches(r, u.pathname));
+    return !blocked;
+  } catch {
+    return true;
+  }
+}
+
+// ---------- Backend bridge ----------
 let creatingOffscreen;
 async function ensureOffscreen() {
   if (await chrome.offscreen.hasDocument?.()) return;
@@ -55,7 +140,6 @@ async function runComparison() {
   }
 
   const anchor = carts[0].platform;
-  // Ensure all 3 platforms exist with a placeholder when missing
   const present = new Set(carts.map((c) => c.platform));
   for (const plat of Object.keys(PLATFORMS)) {
     if (!present.has(plat)) {
@@ -70,7 +154,7 @@ async function runComparison() {
     }
   }
 
-  await jitterDelay(); // simulate respectful spacing
+  await jitterDelay();
   const res = await fetch(`${API}/compare`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -81,11 +165,29 @@ async function runComparison() {
   return json;
 }
 
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+// Cross-site offscreen fetch (gated by robots.txt)
+async function offscreenFetch(url) {
+  if (!(await isUrlAllowed(url))) {
+    return { ok: false, blocked_by: "robots.txt", url };
+  }
+  await ensureOffscreen();
+  await jitterDelay();
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ type: "FETCH_AND_PARSE", url }, (resp) => resolve(resp || { ok: false, error: "no response" }));
+  });
+}
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   (async () => {
     try {
       if (msg?.type === "SCRAPED_CART") {
         const cart = msg.cart;
+        // Respect robots.txt — skip if the active page path is disallowed.
+        const url = sender?.tab?.url || sender?.url;
+        if (url && !(await isUrlAllowed(url))) {
+          sendResponse({ ok: false, blocked_by: "robots.txt" });
+          return;
+        }
         const { virtual_carts = {} } = await chrome.storage.local.get("virtual_carts");
         virtual_carts[cart.platform] = cart;
         await chrome.storage.local.set({ virtual_carts });
@@ -98,8 +200,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         await chrome.storage.local.remove(["virtual_carts", "last_comparison"]);
         sendResponse({ ok: true });
       } else if (msg?.type === "GET_STATE") {
-        const data = await chrome.storage.local.get(["virtual_carts", "last_comparison", "last_comparison_ts"]);
+        const data = await chrome.storage.local.get(["virtual_carts", "last_comparison", "last_comparison_ts", ROBOTS_CACHE_KEY]);
         sendResponse({ ...data, backend: BACKEND_URL });
+      } else if (msg?.type === "OFFSCREEN_FETCH") {
+        sendResponse(await offscreenFetch(msg.url));
+      } else if (msg?.type === "ROBOTS_REFRESH") {
+        await chrome.storage.local.remove(ROBOTS_CACHE_KEY);
+        const cache = await ensureRobotsFresh();
+        sendResponse({ ok: true, cache });
       } else {
         sendResponse({ error: "unknown message" });
       }
@@ -110,7 +218,17 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   return true; // keep channel open
 });
 
+// Daily robots refresh via alarms (survives service-worker sleep)
 chrome.runtime.onInstalled.addListener(async () => {
   await getSessionId();
+  await ensureRobotsFresh();
+  chrome.alarms.create("duna-robots-refresh", { periodInMinutes: 60 * 12 }); // every 12h
   console.log("[DunaSavvy] installed. Backend:", BACKEND_URL);
+});
+
+chrome.alarms?.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === "duna-robots-refresh") {
+    await chrome.storage.local.remove(ROBOTS_CACHE_KEY);
+    await ensureRobotsFresh();
+  }
 });
