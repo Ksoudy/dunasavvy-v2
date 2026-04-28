@@ -4,7 +4,7 @@ import axios from "axios";
 import {
   Activity, AlertTriangle, ArrowRight, ArrowUpRight, Check, ChevronRight,
   Copy, Download, Eye, Flame, Github, MapPin, RefreshCw, ShieldCheck,
-  Sparkles, Timer, TrendingDown, Truck, Zap,
+  Sparkles, Timer, TrendingDown, Truck, Wifi, Zap,
 } from "lucide-react";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -46,6 +46,7 @@ function Header({ onScenario, scenario, onRefresh, loading }) {
         </div>
         <nav className="hidden md:flex items-center gap-7 text-sm text-[var(--muted)]">
           <a href="#engine" className="hover:text-white transition-colors">Engine</a>
+          <a href="#health" className="hover:text-white transition-colors">Health</a>
           <a href="#cart" className="hover:text-white transition-colors">Virtual cart</a>
           <a href="#install" className="hover:text-white transition-colors">Install</a>
         </nav>
@@ -377,6 +378,23 @@ function EngineSection({ data, loading, error }) {
 }
 
 function CartSection({ data }) {
+  const [aiMatches, setAiMatches] = useState(null);
+  const [matching, setMatching] = useState(false);
+  const [usedLlm, setUsedLlm] = useState(false);
+
+  const runAiMatch = async () => {
+    setMatching(true);
+    try {
+      const r = await axios.get(`${API}/demo-fuzzy-match`);
+      setAiMatches(r.data.matches || []);
+      setUsedLlm(!!r.data.used_llm);
+    } catch (e) {
+      setAiMatches([]);
+    } finally {
+      setMatching(false);
+    }
+  };
+
   if (!data) return null;
   const allItems = data.columns.flatMap((c) =>
     c.items.map((it) => ({ ...it, platform: c.platform })),
@@ -387,38 +405,161 @@ function CartSection({ data }) {
     (grouped[key] ||= []).push(it);
   }
 
+  // Decide which dataset to render: AI matches if available else token bucket
+  const rows = aiMatches
+    ? aiMatches.map((m) => ({
+        anchor: m.anchor,
+        cells: {
+          doordash: { name: m.anchor, price: data.columns.find((c) => c.platform === "doordash")?.items.find((it) => it.name === m.anchor)?.price },
+          ubereats: m.ubereats,
+          grubhub: m.grubhub,
+        },
+      }))
+    : Object.values(grouped).map((g) => {
+        const byP = Object.fromEntries(g.map((x) => [x.platform, x]));
+        return { anchor: g[0].name, cells: byP };
+      });
+
   return (
     <section id="cart" className="max-w-[1320px] mx-auto px-8 py-16">
-      <Pill tone="muted" className="mb-3"><Sparkles className="w-3 h-3" /> AI-matched virtual cart</Pill>
-      <h2 className="text-3xl font-extrabold tracking-tight mb-2">The Ghost Cart</h2>
-      <p className="text-[var(--muted)] text-sm max-w-2xl mb-8">
-        Each row is one logical item; columns show what each platform calls it and what they charge.
-      </p>
-      <div className="rounded-2xl border border-[var(--border-2)] bg-[var(--surface)] overflow-hidden">
+      <div className="flex items-end justify-between flex-wrap gap-4 mb-2">
+        <div>
+          <Pill tone="muted" className="mb-3"><Sparkles className="w-3 h-3" /> AI-matched virtual cart</Pill>
+          <h2 className="text-3xl font-extrabold tracking-tight mb-2">The Ghost Cart</h2>
+          <p className="text-[var(--muted)] text-sm max-w-2xl">
+            Each row is one logical item; columns show what each platform calls it and what they charge.
+          </p>
+        </div>
+        <button
+          data-testid="run-ai-match-btn"
+          onClick={runAiMatch}
+          disabled={matching}
+          className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm transition-all ${
+            aiMatches ? "bg-[var(--teal-700)] text-[var(--teal-100)]" : "bg-gradient-to-r from-[var(--teal-500)] to-[var(--teal-600)] text-[#04181a] hover:-translate-y-0.5"
+          } disabled:opacity-50`}
+        >
+          <Sparkles className={`w-4 h-4 ${matching ? "animate-pulse" : ""}`} />
+          {matching ? "AI matching…" : aiMatches ? "Re-run AI match" : "Run AI match"}
+        </button>
+      </div>
+
+      {aiMatches && (
+        <div data-testid="ai-match-status" className="mb-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--teal-700)] bg-[rgba(13,148,136,.08)] text-xs text-[var(--teal-100)]">
+          <Sparkles className="w-3 h-3 text-[var(--teal-300)]" />
+          {usedLlm ? "Matched live by Claude Sonnet 4.5" : "Matched by token-overlap fallback"} · {aiMatches.length} items
+        </div>
+      )}
+
+      <div className="rounded-2xl border border-[var(--border-2)] bg-[var(--surface)] overflow-hidden mt-4">
         <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr] text-[10px] uppercase tracking-[0.16em] text-[var(--muted-2)] border-b border-[var(--border)] px-5 py-3 font-bold">
           <div>Item</div><div>DoorDash</div><div>Uber Eats</div><div>Grubhub</div>
         </div>
-        {Object.entries(grouped).map(([k, group], i) => {
-          const byP = Object.fromEntries(group.map((g) => [g.platform, g]));
-          const prices = Object.values(byP).map((g) => g.price);
-          const minP = Math.min(...prices);
+        {rows.map((row, i) => {
+          const prices = ["doordash", "ubereats", "grubhub"]
+            .map((p) => row.cells[p]?.price)
+            .filter((p) => typeof p === "number");
+          const minP = prices.length ? Math.min(...prices) : null;
           return (
-            <div key={k} className="grid grid-cols-[1.5fr_1fr_1fr_1fr] px-5 py-4 border-b border-[var(--border)]/50 last:border-0 items-center text-sm hover:bg-[var(--surface-2)] transition-colors fade-up" style={{ animationDelay: `${i * 50}ms` }}>
-              <div className="text-white truncate pr-4">{group[0].name.replace(/[-—–].*$/, "").trim() || group[0].name}</div>
+            <div key={i} className="grid grid-cols-[1.5fr_1fr_1fr_1fr] px-5 py-4 border-b border-[var(--border)]/50 last:border-0 items-center text-sm hover:bg-[var(--surface-2)] transition-colors fade-up" style={{ animationDelay: `${i * 50}ms` }}>
+              <div className="text-white truncate pr-4">{row.anchor.replace(/[-—–].*$/, "").trim() || row.anchor}</div>
               {["doordash", "ubereats", "grubhub"].map((p) => {
-                const item = byP[p];
-                if (!item) return <div key={p} className="text-[var(--muted-2)]">—</div>;
-                const isMin = item.price === minP;
+                const cell = row.cells[p];
+                if (!cell || typeof cell.price !== "number") return <div key={p} className="text-[var(--muted-2)]">—</div>;
+                const isMin = cell.price === minP;
                 return (
                   <div key={p} className="flex flex-col">
-                    <span className={`mono tabular font-semibold ${isMin ? "text-[var(--green)]" : "text-white"}`}>{fmt$(item.price)}</span>
-                    <span className="text-[10px] text-[var(--muted-2)] truncate" title={item.name}>{item.name}</span>
+                    <span className={`mono tabular font-semibold ${isMin ? "text-[var(--green)]" : "text-white"}`}>{fmt$(cell.price)}</span>
+                    <span className="text-[10px] text-[var(--muted-2)] truncate" title={cell.name}>{cell.name}</span>
                   </div>
                 );
               })}
             </div>
           );
         })}
+      </div>
+    </section>
+  );
+}
+
+function ScraperHealthSection() {
+  const [health, setHealth] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const r = await axios.get(`${API}/scraper-health`);
+      setHealth(r.data);
+    } catch (e) {
+      setHealth(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const tone = (s) => s === "green" ? "green" : s === "yellow" ? "amber" : "red";
+  const dotColor = (s) => s === "green" ? "var(--green)" : s === "yellow" ? "var(--amber)" : "#ef4444";
+
+  return (
+    <section id="health" className="max-w-[1320px] mx-auto px-8 pb-4">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
+        <div className="flex items-end justify-between flex-wrap gap-3 mb-4">
+          <div>
+            <Pill tone="muted" className="mb-2"><Wifi className="w-3 h-3" /> Scraper diagnostics</Pill>
+            <h3 className="text-xl font-extrabold tracking-tight">Selector health</h3>
+            <p className="text-xs text-[var(--muted)] mt-1">Live HEAD probes + selector freshness for each platform.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {health && (
+              <div data-testid="health-overall" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold"
+                   style={{ borderColor: dotColor(health.overall), color: dotColor(health.overall), background: "rgba(255,255,255,.02)" }}>
+                <span className="w-2 h-2 rounded-full" style={{ background: dotColor(health.overall), boxShadow: `0 0 10px ${dotColor(health.overall)}` }} />
+                Overall {health.overall.toUpperCase()}
+              </div>
+            )}
+            <button data-testid="health-refresh" onClick={load} disabled={loading} className="text-xs text-[var(--muted)] hover:text-white inline-flex items-center gap-1.5">
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> Re-probe
+            </button>
+          </div>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-3">
+          {(health?.platforms || [{platform:"doordash"},{platform:"ubereats"},{platform:"grubhub"}]).map((p) => (
+            <div key={p.platform} data-testid={`health-${p.platform}`} className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
+              <div className="flex items-center justify-between">
+                <div className="text-[11px] uppercase tracking-[0.18em] font-bold" style={{ color: PLATFORMS[p.platform].color }}>
+                  {PLATFORMS[p.platform].label}
+                </div>
+                {p.status && (
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest"
+                        style={{ color: dotColor(p.status) }}>
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: dotColor(p.status) }} />
+                    {p.status}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-3 mt-4 text-xs">
+                <div>
+                  <div className="text-[var(--muted-2)] uppercase tracking-wider text-[9px]">HTTP</div>
+                  <div className="mono text-white">{p.http_status || "—"}</div>
+                </div>
+                <div>
+                  <div className="text-[var(--muted-2)] uppercase tracking-wider text-[9px]">Latency</div>
+                  <div className="mono text-white">{p.latency_ms != null ? `${p.latency_ms} ms` : "—"}</div>
+                </div>
+                <div>
+                  <div className="text-[var(--muted-2)] uppercase tracking-wider text-[9px]">Selectors</div>
+                  <div className="mono text-white">{p.selector_count ?? "—"}</div>
+                </div>
+                <div>
+                  <div className="text-[var(--muted-2)] uppercase tracking-wider text-[9px]">Verified</div>
+                  <div className="mono text-white">{p.days_since_verified != null ? `${p.days_since_verified}d ago` : "—"}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -535,6 +676,7 @@ export default function App() {
       <Hero onScrollToEngine={onScrollToEngine} />
       <FeatureRow />
       <EngineSection data={data} loading={loading} error={error} />
+      <ScraperHealthSection />
       <CartSection data={data} />
       <InstallSection />
       <Footer />

@@ -40,18 +40,20 @@ Build a Chrome Extension (Manifest V3) that acts as a real-time price-comparison
 - Typography: Plus Jakarta Sans (body) + JetBrains Mono (numbers)
 
 ## What's Implemented (2026-02)
-- ✅ Backend with all 7 endpoints + Mongo persistence
+- ✅ Backend with all 9 endpoints + Mongo persistence
 - ✅ AI fuzzy matching via Emergent LLM key (Claude Sonnet 4.5) with graceful fallback
-- ✅ Gouging detection (median + 10% threshold)
+- ✅ Live `/api/demo-fuzzy-match` button in dashboard ("Run AI match")
+- ✅ Live `/api/scraper-health` selector diagnostics (HEAD probes + freshness)
+- ✅ Gouging detection (token-Jaccard grouping + median + 10% threshold)
 - ✅ Total landed cost calculation
 - ✅ Address consistency check
 - ✅ Chrome MV3 extension (scraper + service-worker + offscreen + popup)
-- ✅ React dashboard with 4 scenarios, animations, dark teal theme
+- ✅ React dashboard with 4 scenarios, Scraper Health widget, AI-match button, animations, dark teal theme
 - ✅ Documentation (extension README)
 
 ## Backlog / Next
 - P1: Live extension testing on real DoorDash/UberEats/Grubhub pages (selectors will drift)
-- P1: Persistent restaurant slug normalization across platforms
+- P1: Auto-coupon/promo-code awareness in landed-cost calculation (factor active codes)
 - P2: User auth + saved comparison history
 - P2: Push notifications when winner changes
 - P3: Mobile companion / iOS Safari extension

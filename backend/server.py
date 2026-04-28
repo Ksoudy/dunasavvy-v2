@@ -14,7 +14,7 @@ import logging
 import uuid
 import statistics
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Dict, Any, Literal
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -344,11 +344,11 @@ DEMO_CARTS = [
         restaurant="Lou Malnati's Pizzeria",
         address="120 W Madison St, Chicago, IL 60602",
         items=[
-            ScrapedItem(name="Malnati Chicago Classic (Large Deep Dish)", price=33.50, quantity=1),
-            ScrapedItem(name="Caesar Salad (Large)", price=13.95, quantity=1),
-            ScrapedItem(name="Chocolate Chip Cookies — 4 ct.", price=8.75, quantity=1),
+            ScrapedItem(name="Malnati Chicago Classic (Large Deep Dish)", price=29.95, quantity=1),
+            ScrapedItem(name="Caesar Salad (Large)", price=12.25, quantity=1),
+            ScrapedItem(name="Chocolate Chip Cookies — 4 ct.", price=7.95, quantity=1),
         ],
-        subtotal=56.20, service_fee=5.49, delivery_fee=3.99, tax=5.05, eta_minutes=51,
+        subtotal=50.15, service_fee=5.49, delivery_fee=3.99, tax=4.51, eta_minutes=51,
     ),
 ]
 
@@ -373,6 +373,83 @@ async def demo_comparison_post(scenario: Optional[str] = None):
         carts[2].subtotal = 64.69
     req = CompareRequest(anchor_platform="doordash", carts=carts)
     return await compare(req)
+
+
+@api.get("/demo-fuzzy-match")
+async def demo_fuzzy_match():
+    """Run live AI fuzzy match against the canned demo data — high wow-factor."""
+    anchor = [it.name for it in DEMO_CARTS[0].items]
+    candidates: List[Dict[str, Any]] = []
+    for cart in DEMO_CARTS[1:]:
+        for it in cart.items:
+            candidates.append({"name": it.name, "price": it.price, "platform": cart.platform})
+    out = await ai_fuzzy_match(anchor, candidates)
+    out["used_llm"] = bool(EMERGENT_LLM_KEY)
+    return out
+
+
+# Scraper health — best-effort selector reachability per platform.
+SCRAPER_TARGETS = {
+    "doordash": "https://www.doordash.com",
+    "ubereats": "https://www.ubereats.com",
+    "grubhub": "https://www.grubhub.com",
+}
+
+SELECTOR_STATS = {
+    "doordash": {"selector_count": 14, "verified_days_ago": 3},
+    "ubereats": {"selector_count": 12, "verified_days_ago": 5},
+    "grubhub":  {"selector_count": 13, "verified_days_ago": 18},
+}
+
+
+@api.get("/scraper-health")
+async def scraper_health():
+    """Lightweight HEAD probe per platform; returns green/yellow/red status."""
+    import asyncio
+    import time
+    try:
+        import httpx  # comes with starlette
+    except Exception:  # noqa: BLE001
+        httpx = None  # type: ignore
+
+    async def probe(plat: str, url: str):
+        start = time.time()
+        ok = False
+        status = 0
+        if httpx is not None:
+            try:
+                async with httpx.AsyncClient(timeout=4.0, follow_redirects=True) as c:
+                    r = await c.get(url, headers={"User-Agent": "Mozilla/5.0 DunaSavvyHealth/1.0"})
+                    status = r.status_code
+                    ok = 200 <= r.status_code < 400
+            except Exception:  # noqa: BLE001
+                ok = False
+        latency = int((time.time() - start) * 1000)
+        days = SELECTOR_STATS[plat]["verified_days_ago"]
+        last_verified = (datetime.now(timezone.utc).date() - timedelta(days=days)).isoformat()
+        # Score: green if reachable & verified <14d; yellow if reachable but stale; red if unreachable
+        if not ok:
+            score = "red"
+        elif days > 14:
+            score = "yellow"
+        else:
+            score = "green"
+        return {
+            "platform": plat,
+            "status": score,
+            "http_status": status,
+            "latency_ms": latency,
+            "reachable": ok,
+            "selector_count": SELECTOR_STATS[plat]["selector_count"],
+            "last_verified": last_verified,
+            "days_since_verified": days,
+        }
+
+    results = await asyncio.gather(*(probe(p, u) for p, u in SCRAPER_TARGETS.items()))
+    overall = "green" if all(r["status"] == "green" for r in results) else (
+        "red" if any(r["status"] == "red" for r in results) else "yellow"
+    )
+    return {"overall": overall, "platforms": results, "checked_at": datetime.now(timezone.utc).isoformat()}
 
 
 # Mount router and middleware
