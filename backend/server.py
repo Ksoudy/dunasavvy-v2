@@ -359,6 +359,33 @@ async def demo_comparison():
     return await compare(req)
 
 
+class SearchRequest(BaseModel):
+    address: Optional[str] = None
+    restaurant: Optional[str] = None
+    lat: Optional[float] = None
+    lon: Optional[float] = None
+
+
+@api.post("/search")
+async def search(req: SearchRequest):
+    """Location-first entry. Returns a comparison contextualized to the user's
+    address + restaurant. We respond with the demo data but echo back the
+    chosen location/restaurant so the frontend can render an honest preview.
+    Production scrapers run in the extension on the user's own browser."""
+    carts = [c.model_copy(deep=True) for c in DEMO_CARTS]
+    if req.address:
+        for c in carts:
+            c.address = req.address
+    if req.restaurant:
+        for c in carts:
+            c.restaurant = req.restaurant
+    cmp_req = CompareRequest(anchor_platform="doordash", carts=carts)
+    result = await compare(cmp_req)
+    payload = result.model_dump()
+    payload["search"] = {"address": req.address, "restaurant": req.restaurant, "lat": req.lat, "lon": req.lon}
+    return payload
+
+
 @api.post("/demo-comparison")
 async def demo_comparison_post(scenario: Optional[str] = None):
     """Optionally mutate the demo (e.g. inject auth_required or address mismatch)."""
