@@ -19,10 +19,10 @@ const fmt$ = (n) => `$${(Number(n) || 0).toFixed(2)}`;
 
 function Pill({ children, tone = "teal", className = "" }) {
   const tones = {
-    teal:   "bg-[rgba(20,184,166,.1)] text-[#5eead4] border-[#134e4a]",
-    amber:  "bg-[rgba(245,158,11,.1)] text-[#fcd34d] border-[#78350f]",
-    green:  "bg-[rgba(34,197,94,.1)]  text-[#86efac] border-[#14532d]",
-    muted:  "bg-[rgba(255,255,255,.04)] text-[#84b9b6] border-[#15404a]",
+    teal:   "bg-[rgba(13,148,136,.10)] text-[var(--teal-700)] border-[#a8d8d1]",
+    amber:  "bg-[rgba(217,119,6,.10)] text-[#92400e] border-[#fbbf24]",
+    green:  "bg-[rgba(22,163,74,.10)]  text-[#15803d] border-[#86efac]",
+    muted:  "bg-[rgba(13,148,136,.04)] text-[var(--muted)] border-[var(--border)]",
   };
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-medium tracking-wide ${tones[tone]} ${className}`}>
@@ -33,11 +33,11 @@ function Pill({ children, tone = "teal", className = "" }) {
 
 function Header({ onScenario, scenario, onRefresh, loading }) {
   return (
-    <header data-testid="app-header" className="sticky top-0 z-30 backdrop-blur-md bg-[rgba(6,20,26,.7)] border-b border-[var(--border)]">
+    <header data-testid="app-header" className="sticky top-0 z-30 backdrop-blur-md bg-[rgba(255,255,255,.7)] border-b border-[var(--border)]">
       <div className="max-w-[1320px] mx-auto px-8 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--teal-500)] to-[var(--teal-700)] flex items-center justify-center shadow-[0_0_24px_rgba(20,184,166,.35)]">
-            <Zap className="w-5 h-5 text-[#04181a]" strokeWidth={2.5} />
+          <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--teal-500)] to-[var(--teal-700)] flex items-center justify-center shadow-[0_8px_24px_rgba(20,184,166,.35)]">
+            <Zap className="w-5 h-5 text-white" strokeWidth={2.5} />
           </div>
           <div>
             <div className="font-extrabold tracking-tight text-lg leading-none">DunaSavvy</div>
@@ -45,10 +45,10 @@ function Header({ onScenario, scenario, onRefresh, loading }) {
           </div>
         </div>
         <nav className="hidden md:flex items-center gap-7 text-sm text-[var(--muted)]">
-          <a href="#engine" className="hover:text-white transition-colors">Engine</a>
-          <a href="#health" className="hover:text-white transition-colors">Health</a>
-          <a href="#cart" className="hover:text-white transition-colors">Virtual cart</a>
-          <a href="#install" className="hover:text-white transition-colors">Install</a>
+          <a href="#engine" className="hover:text-[var(--text)] transition-colors">Engine</a>
+          <a href="#health" className="hover:text-[var(--text)] transition-colors">Health</a>
+          <a href="#cart" className="hover:text-[var(--text)] transition-colors">Virtual cart</a>
+          <a href="#install" className="hover:text-[var(--text)] transition-colors">Install</a>
         </nav>
         <div className="flex items-center gap-2">
           <select
@@ -66,7 +66,7 @@ function Header({ onScenario, scenario, onRefresh, loading }) {
             data-testid="refresh-btn"
             onClick={onRefresh}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--teal-600)] hover:bg-[var(--teal-500)] text-[#04181a] font-semibold text-sm transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--teal-600)] hover:bg-[var(--teal-500)] text-white font-semibold text-sm transition-all disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
             Re-run
@@ -83,12 +83,12 @@ function Hero({ onScrollToEngine }) {
       <div className="max-w-[1320px] mx-auto px-8 pt-14 pb-10 grid lg:grid-cols-[1.2fr_1fr] gap-12 items-end">
         <div className="fade-up">
           <Pill tone="teal" className="mb-5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--teal-400)] animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--teal-500)] animate-pulse" />
             Live engine · Claude Sonnet 4.5
           </Pill>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-[-0.025em] leading-[1.02]">
             One cart.<br />
-            <span className="text-[var(--teal-400)]">Three platforms.</span><br />
+            <span className="text-[var(--teal-600)]">Three platforms.</span><br />
             The cheapest landed cost wins.
           </h1>
           <p className="mt-6 text-base text-[var(--muted)] max-w-xl leading-relaxed">
@@ -100,14 +100,14 @@ function Hero({ onScrollToEngine }) {
             <button
               data-testid="hero-engine-btn"
               onClick={onScrollToEngine}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[var(--teal-500)] hover:bg-[var(--teal-400)] text-[#04181a] font-semibold transition-transform hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[var(--teal-500)] hover:bg-[var(--teal-400)] text-white font-semibold transition-transform hover:-translate-y-0.5 shadow-[0_8px_24px_rgba(20,184,166,.35)]"
             >
               See it live <ArrowRight className="w-4 h-4" />
             </button>
             <a
               data-testid="hero-install-btn"
               href="#install"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-[var(--border-2)] hover:border-[var(--teal-400)] text-white font-semibold transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-[var(--border-2)] bg-white hover:border-[var(--teal-500)] text-[var(--text)] font-semibold transition-colors"
             >
               <Download className="w-4 h-4" /> Install extension
             </a>
@@ -119,7 +119,7 @@ function Hero({ onScrollToEngine }) {
               { k: "MV3", v: "Manifest version" },
             ].map((s) => (
               <div key={s.v}>
-                <div className="mono text-2xl text-white font-bold tabular">{s.k}</div>
+                <div className="mono text-2xl text-[var(--text)] font-bold tabular">{s.k}</div>
                 <div className="text-[11px] uppercase tracking-[0.16em] text-[var(--muted-2)] mt-1">{s.v}</div>
               </div>
             ))}
@@ -137,7 +137,7 @@ function HeroVisual() {
   return (
     <div data-testid="hero-visual" className="relative fade-up">
       <div className="absolute -inset-6 bg-gradient-to-br from-[var(--teal-700)]/30 to-transparent blur-2xl rounded-3xl" />
-      <div className="relative rounded-2xl border border-[var(--border-2)] bg-gradient-to-b from-[var(--surface-2)] to-[var(--surface)] p-5 shadow-2xl">
+      <div className="relative rounded-2xl border border-[var(--border-2)] bg-gradient-to-b from-white to-[var(--surface-2)] p-5 shadow-[0_24px_60px_-20px_rgba(13,148,136,.25)]">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 text-xs text-[var(--muted)]">
             <Activity className="w-3.5 h-3.5 text-[var(--teal-400)]" />
@@ -160,9 +160,9 @@ function HeroVisual() {
             </div>
           ))}
         </div>
-        <div className="mt-4 p-3 rounded-lg bg-[rgba(13,148,136,.08)] border border-[rgba(13,148,136,.3)] text-xs text-[var(--teal-100)] flex items-center gap-2">
-          <Sparkles className="w-3.5 h-3.5 text-[var(--teal-300)]" />
-          AI matched 3 items across platforms · saves <span className="mono text-white font-semibold ml-1">$3.02</span>
+        <div className="mt-4 p-3 rounded-lg bg-[rgba(13,148,136,.08)] border border-[rgba(13,148,136,.3)] text-xs text-[var(--teal-700)] flex items-center gap-2">
+          <Sparkles className="w-3.5 h-3.5 text-[var(--teal-600)]" />
+          AI matched 3 items across platforms · saves <span className="mono text-[var(--text)] font-semibold ml-1">$3.02</span>
         </div>
       </div>
     </div>
@@ -205,7 +205,7 @@ function AddressBanner({ data }) {
             <span key={k} className="inline-flex items-center gap-1.5">
               <MapPin className="w-3 h-3" />
               <span className="text-[var(--muted-2)]">{PLATFORMS[k]?.label}:</span>
-              <span className="text-white">{v}</span>
+              <span className="text-[var(--text)]">{v}</span>
             </span>
           ))}
         </div>
@@ -240,7 +240,7 @@ function ColumnCard({ col, isWinner, gougingItems }) {
           <div className="text-[11px] uppercase tracking-[0.18em] font-bold" style={{ color: PLATFORMS[col.platform].color }}>
             {PLATFORMS[col.platform].label}
           </div>
-          <div className="text-sm font-semibold text-white mt-1 truncate max-w-[220px]">{col.restaurant || "—"}</div>
+          <div className="text-sm font-semibold text-[var(--text)] mt-1 truncate max-w-[220px]">{col.restaurant || "—"}</div>
         </div>
         <div className="flex items-center gap-1 text-xs text-[var(--muted)]">
           <Timer className="w-3.5 h-3.5" /> {col.eta_minutes ? `${col.eta_minutes} min` : "—"}
@@ -256,7 +256,7 @@ function ColumnCard({ col, isWinner, gougingItems }) {
                 {flagged && <AlertTriangle className="w-3.5 h-3.5 text-[var(--amber)] shrink-0" />}
                 <span className="truncate text-[var(--muted)]" title={it.name}>{it.name}</span>
               </div>
-              <span className="mono text-white tabular shrink-0">{fmt$(it.price)}</span>
+              <span className="mono text-[var(--text)] tabular shrink-0">{fmt$(it.price)}</span>
             </div>
           );
         }) : (
@@ -277,7 +277,7 @@ function ColumnCard({ col, isWinner, gougingItems }) {
 
       <div className="mt-auto flex items-end justify-between">
         <div className="text-[11px] uppercase tracking-widest text-[var(--muted-2)]">Total landed</div>
-        <div className={`mono font-extrabold text-3xl tabular ${isWinner ? "text-[var(--green)]" : "text-white"}`}>
+        <div className={`mono font-extrabold text-3xl tabular ${isWinner ? "text-[var(--green)]" : "text-[var(--text)]"}`}>
           {fmt$(col.total_landed)}
         </div>
       </div>
@@ -362,10 +362,10 @@ function EngineSection({ data, loading, error }) {
             {data.gouging_flags.map((g, i) => (
               <div key={i} className="rounded-lg border border-[var(--amber)]/30 bg-[rgba(0,0,0,.25)] p-3 text-sm">
                 <div className="text-[10px] uppercase tracking-widest text-[var(--amber)] font-bold mb-1">{PLATFORMS[g.platform]?.label}</div>
-                <div className="text-white truncate" title={g.item}>{g.item}</div>
+                <div className="text-[var(--text)] truncate" title={g.item}>{g.item}</div>
                 <div className="flex justify-between mt-2 text-xs text-[var(--muted)]">
-                  <span>This: <span className="mono text-white">{fmt$(g.unit_price)}</span></span>
-                  <span>Median: <span className="mono text-white">{fmt$(g.median_price)}</span></span>
+                  <span>This: <span className="mono text-[var(--text)]">{fmt$(g.unit_price)}</span></span>
+                  <span>Median: <span className="mono text-[var(--text)]">{fmt$(g.median_price)}</span></span>
                   <span className="mono text-[var(--amber)] font-bold">+{g.premium_pct}%</span>
                 </div>
               </div>
@@ -435,17 +435,17 @@ function CartSection({ data }) {
           onClick={runAiMatch}
           disabled={matching}
           className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm transition-all ${
-            aiMatches ? "bg-[var(--teal-700)] text-[var(--teal-100)]" : "bg-gradient-to-r from-[var(--teal-500)] to-[var(--teal-600)] text-[#04181a] hover:-translate-y-0.5"
+            aiMatches ? "bg-[var(--teal-700)] text-white" : "bg-gradient-to-r from-[var(--teal-500)] to-[var(--teal-600)] text-white hover:-translate-y-0.5 shadow-[0_8px_20px_rgba(20,184,166,.30)]"
           } disabled:opacity-50`}
         >
-          <Sparkles className={`w-4 h-4 ${matching ? "animate-pulse" : ""}`} />
+          <Sparkles className={`w-4 h-4 text-white ${matching ? "animate-pulse" : ""}`} />
           {matching ? "AI matching…" : aiMatches ? "Re-run AI match" : "Run AI match"}
         </button>
       </div>
 
       {aiMatches && (
-        <div data-testid="ai-match-status" className="mb-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--teal-700)] bg-[rgba(13,148,136,.08)] text-xs text-[var(--teal-100)]">
-          <Sparkles className="w-3 h-3 text-[var(--teal-300)]" />
+        <div data-testid="ai-match-status" className="mb-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--teal-600)]/40 bg-[rgba(13,148,136,.08)] text-xs text-[var(--teal-700)]">
+          <Sparkles className="w-3 h-3 text-[var(--teal-600)]" />
           {usedLlm ? "Matched live by Claude Sonnet 4.5" : "Matched by token-overlap fallback"} · {aiMatches.length} items
         </div>
       )}
@@ -461,14 +461,14 @@ function CartSection({ data }) {
           const minP = prices.length ? Math.min(...prices) : null;
           return (
             <div key={i} className="grid grid-cols-[1.5fr_1fr_1fr_1fr] px-5 py-4 border-b border-[var(--border)]/50 last:border-0 items-center text-sm hover:bg-[var(--surface-2)] transition-colors fade-up" style={{ animationDelay: `${i * 50}ms` }}>
-              <div className="text-white truncate pr-4">{row.anchor.replace(/[-—–].*$/, "").trim() || row.anchor}</div>
+              <div className="text-[var(--text)] truncate pr-4">{row.anchor.replace(/[-—–].*$/, "").trim() || row.anchor}</div>
               {["doordash", "ubereats", "grubhub"].map((p) => {
                 const cell = row.cells[p];
                 if (!cell || typeof cell.price !== "number") return <div key={p} className="text-[var(--muted-2)]">—</div>;
                 const isMin = cell.price === minP;
                 return (
                   <div key={p} className="flex flex-col">
-                    <span className={`mono tabular font-semibold ${isMin ? "text-[var(--green)]" : "text-white"}`}>{fmt$(cell.price)}</span>
+                    <span className={`mono tabular font-semibold ${isMin ? "text-[var(--green)]" : "text-[var(--text)]"}`}>{fmt$(cell.price)}</span>
                     <span className="text-[10px] text-[var(--muted-2)] truncate" title={cell.name}>{cell.name}</span>
                   </div>
                 );
@@ -519,7 +519,7 @@ function ScraperHealthSection() {
                 Overall {health.overall.toUpperCase()}
               </div>
             )}
-            <button data-testid="health-refresh" onClick={load} disabled={loading} className="text-xs text-[var(--muted)] hover:text-white inline-flex items-center gap-1.5">
+            <button data-testid="health-refresh" onClick={load} disabled={loading} className="text-xs text-[var(--muted)] hover:text-[var(--text)] inline-flex items-center gap-1.5">
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} /> Re-probe
             </button>
           </div>
@@ -542,19 +542,19 @@ function ScraperHealthSection() {
               <div className="grid grid-cols-2 gap-3 mt-4 text-xs">
                 <div>
                   <div className="text-[var(--muted-2)] uppercase tracking-wider text-[9px]">HTTP</div>
-                  <div className="mono text-white">{p.http_status || "—"}</div>
+                  <div className="mono text-[var(--text)]">{p.http_status || "—"}</div>
                 </div>
                 <div>
                   <div className="text-[var(--muted-2)] uppercase tracking-wider text-[9px]">Latency</div>
-                  <div className="mono text-white">{p.latency_ms != null ? `${p.latency_ms} ms` : "—"}</div>
+                  <div className="mono text-[var(--text)]">{p.latency_ms != null ? `${p.latency_ms} ms` : "—"}</div>
                 </div>
                 <div>
                   <div className="text-[var(--muted-2)] uppercase tracking-wider text-[9px]">Selectors</div>
-                  <div className="mono text-white">{p.selector_count ?? "—"}</div>
+                  <div className="mono text-[var(--text)]">{p.selector_count ?? "—"}</div>
                 </div>
                 <div>
                   <div className="text-[var(--muted-2)] uppercase tracking-wider text-[9px]">Verified</div>
-                  <div className="mono text-white">{p.days_since_verified != null ? `${p.days_since_verified}d ago` : "—"}</div>
+                  <div className="mono text-[var(--text)]">{p.days_since_verified != null ? `${p.days_since_verified}d ago` : "—"}</div>
                 </div>
               </div>
             </div>
@@ -574,7 +574,7 @@ function InstallSection() {
   ];
   return (
     <section id="install" className="max-w-[1320px] mx-auto px-8 pb-24">
-      <div className="rounded-3xl border border-[var(--border-2)] bg-gradient-to-br from-[var(--surface-2)] to-[var(--surface)] p-10 grid lg:grid-cols-[1.1fr_1fr] gap-10">
+      <div className="rounded-3xl border border-[var(--border-2)] bg-gradient-to-br from-white to-[var(--surface-2)] p-10 grid lg:grid-cols-[1.1fr_1fr] gap-10 shadow-[0_24px_60px_-30px_rgba(13,148,136,.20)]">
         <div>
           <Pill tone="teal" className="mb-3"><Download className="w-3 h-3" /> Chrome Manifest V3</Pill>
           <h2 className="text-3xl font-extrabold tracking-tight">Drop the engine in your browser</h2>
@@ -584,16 +584,16 @@ function InstallSection() {
           <ol className="mt-6 space-y-3">
             {steps.map((s, i) => (
               <li key={i} className="flex items-start gap-3 text-sm">
-                <span className="mono w-6 h-6 rounded-full bg-[var(--teal-700)] text-[var(--teal-100)] flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5">{i + 1}</span>
-                <span className="text-white/90">{s}</span>
+                <span className="mono w-6 h-6 rounded-full bg-[var(--teal-600)] text-white flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5">{i + 1}</span>
+                <span className="text-[var(--text)]">{s}</span>
               </li>
             ))}
           </ol>
           <div className="mt-7 flex flex-wrap gap-3">
-            <a data-testid="install-zip-btn" href="#" onClick={(e) => e.preventDefault()} className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[var(--teal-500)] text-[#04181a] font-semibold hover:bg-[var(--teal-400)] transition-colors">
+            <a data-testid="install-zip-btn" href="#" onClick={(e) => e.preventDefault()} className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[var(--teal-500)] text-white font-semibold hover:bg-[var(--teal-400)] transition-colors shadow-[0_8px_24px_rgba(20,184,166,.35)]">
               <Download className="w-4 h-4" /> /app/extension folder
             </a>
-            <a href="https://developer.chrome.com/docs/extensions/mv3/getstarted/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-[var(--border-2)] hover:border-[var(--teal-400)] transition-colors text-sm">
+            <a href="https://developer.chrome.com/docs/extensions/mv3/getstarted/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-[var(--border-2)] bg-white hover:border-[var(--teal-500)] transition-colors text-sm text-[var(--text)]">
               MV3 docs <ArrowUpRight className="w-3.5 h-3.5" />
             </a>
           </div>
@@ -637,9 +637,9 @@ function Footer() {
           DunaSavvy · The cheapest landed cost wins.
         </div>
         <div className="flex items-center gap-5">
-          <a href="#engine" className="hover:text-white">Engine</a>
-          <a href="#cart" className="hover:text-white">Ghost cart</a>
-          <a href="#install" className="hover:text-white">Install</a>
+          <a href="#engine" className="hover:text-[var(--text)]">Engine</a>
+          <a href="#cart" className="hover:text-[var(--text)]">Ghost cart</a>
+          <a href="#install" className="hover:text-[var(--text)]">Install</a>
         </div>
       </div>
     </footer>
