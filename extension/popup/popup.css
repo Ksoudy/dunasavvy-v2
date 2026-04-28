@@ -1,0 +1,55 @@
+:root{
+  --teal:#0d9488;
+  --teal-2:#14b8a6;
+  --teal-soft:#ccfbf1;
+  --amber:#f59e0b;
+  --green:#22c55e;
+  --bg:#0b1416;
+  --surface:#0f1c1f;
+  --surface-2:#13282c;
+  --border:#1f3a3f;
+  --text:#e6fffb;
+  --muted:#7faeac;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:480px;min-height:560px;background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans','Inter',-apple-system,sans-serif;font-size:13px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#0f1c1f 0%,#0b1416 100%)}
+.brand{display:flex;align-items:center;gap:8px}
+.dot{width:10px;height:10px;border-radius:999px;background:var(--teal-2);box-shadow:0 0 12px var(--teal-2)}
+.brand-name{font-weight:700;letter-spacing:-0.01em}
+.brand-tag{font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted)}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px}
+.btn-ghost:hover{border-color:var(--teal-2);color:var(--teal-2)}
+.btn-ghost-sm{background:transparent;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline}
+.banner{margin:12px 16px;padding:10px 12px;border-radius:8px;font-size:12px;display:flex;flex-direction:column;gap:2px}
+.banner-ok{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);color:#bbf7d0}
+.banner-warn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.4);color:#fde68a}
+.banner-title{font-weight:600}
+.banner-sub{color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 12px 0}
+.col{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;min-height:280px;position:relative;transition:border-color .2s, box-shadow .2s}
+.col.winner{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset, 0 0 24px rgba(34,197,94,.18)}
+.col.unavailable{opacity:.55}
+.col-head{display:flex;align-items:center;justify-content:space-between}
+.platform-name{font-weight:700;font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.platform-eta{font-size:10px;color:var(--muted)}
+.items{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted);max-height:120px;overflow:auto}
+.item{display:flex;justify-content:space-between;gap:6px}
+.item .nm{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#cfeae7}
+.item .pr{font-family:'JetBrains Mono',ui-monospace,monospace}
+.item.gouge .nm::before{content:"!";color:var(--amber);font-weight:700;margin-right:4px}
+.totals{font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:2px;padding-top:6px;border-top:1px dashed var(--border)}
+.totals .row{display:flex;justify-content:space-between}
+.landed{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:18px;font-weight:700;color:var(--text);margin-top:auto}
+.col.winner .landed{color:var(--green)}
+.tag{position:absolute;top:8px;right:8px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:2px 6px;border-radius:4px;background:var(--surface-2);color:var(--muted)}
+.tag-winner{background:rgba(34,197,94,.15);color:var(--green)}
+.tag-auth{background:rgba(245,158,11,.15);color:var(--amber)}
+.foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.winner-strip{background:linear-gradient(90deg,rgba(34,197,94,.12),rgba(13,148,136,.12));border:1px solid rgba(34,197,94,.3);padding:8px 10px;border-radius:8px;font-size:12px;color:#bbf7d0}
+.winner-strip strong{color:#fff}
+.links{display:flex;justify-content:space-between;gap:8px;font-size:11px}
+.links a{color:var(--muted);text-decoration:none;border:1px solid var(--border);padding:4px 8px;border-radius:6px;flex:1;text-align:center}
+.links a:hover{color:var(--teal-2);border-color:var(--teal-2)}
+.empty{padding:48px 16px;text-align:center;color:var(--muted);font-size:12px}
+.empty .big{font-size:14px;color:var(--text);font-weight:600;margin-bottom:6px}

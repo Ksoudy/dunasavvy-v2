@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>DunaSavvy</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot"></span>
+      <span class="brand-name">DunaSavvy</span>
+      <span class="brand-tag">Price Engine</span>
+    </div>
+    <button id="refresh" class="btn-ghost" title="Re-run comparison">Re-run</button>
+  </header>
+
+  <div id="address-banner" class="banner banner-ok" hidden>
+    <span class="banner-title"></span>
+    <span class="banner-sub"></span>
+  </div>
+
+  <main id="grid" class="grid"></main>
+
+  <footer class="foot">
+    <div id="winner-strip" class="winner-strip" hidden></div>
+    <div class="links">
+      <a id="open-doordash" href="https://www.doordash.com" target="_blank">DoorDash</a>
+      <a id="open-ubereats" href="https://www.ubereats.com" target="_blank">Uber Eats</a>
+      <a id="open-grubhub" href="https://www.grubhub.com" target="_blank">Grubhub</a>
+    </div>
+    <button id="reset" class="btn-ghost-sm">Reset cart</button>
+  </footer>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
