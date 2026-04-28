@@ -3,9 +3,8 @@ import "@/App.css";
 import axios from "axios";
 import {
   Activity, AlertTriangle, ArrowRight, ArrowUpRight, Check, ChevronRight,
-  Compass, Copy, Crosshair, Download, Eye, Flame, Github, Layers, MapPin, Navigation,
-  Radar, RefreshCw, Search, ShieldCheck, Sparkles, Store, Timer, TrendingDown,
-  TrendingUp, Truck, Wifi, X, Zap,
+  Copy, Download, Eye, Flame, Github, MapPin, Navigation, Radar, RefreshCw,
+  Search, ShieldCheck, Sparkles, Store, Timer, TrendingDown, Truck, Wifi, X, Zap,
 } from "lucide-react";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -81,43 +80,41 @@ function Header({ onScenario, scenario, onRefresh, loading }) {
 function Hero({ onScrollToEngine, onSearch, location, scanning }) {
   return (
     <section className="relative overflow-hidden">
-      <div className="max-w-[1320px] mx-auto px-8 pt-14 pb-10 grid lg:grid-cols-[1.15fr_1fr] gap-12 items-start">
-        <div className="fade-up">
-          <Pill tone="cobalt" className="mb-5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--cobalt)] animate-pulse" />
-            Live engine · Claude Sonnet 4.5
-          </Pill>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-[-0.025em] leading-[1.02]">
-            Where do you want<br />
-            <span className="text-[var(--cobalt)]">food, smarter?</span>
-          </h1>
-          <p className="mt-5 text-base text-[var(--muted)] max-w-xl leading-relaxed">
-            Type your delivery address or a restaurant. DunaSavvy scans <strong className="text-[var(--text)]">DoorDash</strong>, <strong className="text-[var(--text)]">Uber Eats</strong>, and <strong className="text-[var(--text)]">Grubhub</strong> for the cheapest total landed cost — fees, delivery, and tax included.
-          </p>
+      <div className="max-w-[920px] mx-auto px-8 pt-16 pb-12 text-center fade-up">
+        <Pill tone="cobalt" className="mb-5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--cobalt)] animate-pulse" />
+          Live engine · Claude Sonnet 4.5
+        </Pill>
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-[-0.025em] leading-[1.02]">
+          Where do you want<br />
+          <span className="text-[var(--cobalt)]">food, smarter?</span>
+        </h1>
+        <p className="mt-5 text-base text-[var(--muted)] max-w-2xl mx-auto leading-relaxed">
+          Type your delivery address or a restaurant. DunaSavvy scans <strong className="text-[var(--text)]">DoorDash</strong>, <strong className="text-[var(--text)]">Uber Eats</strong>, and <strong className="text-[var(--text)]">Grubhub</strong> for the cheapest total landed cost — fees, delivery, and tax included.
+        </p>
 
+        <div className="mt-8 max-w-3xl mx-auto text-left">
           <SearchHero onSearch={onSearch} location={location} scanning={scanning} />
-
-          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-[var(--muted)]">
-            <span className="inline-flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5 text-[var(--green)]" /> Public data only · no logins required</span>
-            <span className="inline-flex items-center gap-1.5"><Radar className="w-3.5 h-3.5 text-[var(--cobalt)]" /> Block-level pricing</span>
-            <span className="inline-flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-[var(--cobalt)]" /> AI item-matching</span>
-          </div>
-
-          <div className="mt-10 grid grid-cols-3 max-w-md gap-6">
-            {[
-              { k: "<2s", v: "Cross-platform compare" },
-              { k: "10%+", v: "Gouging threshold" },
-              { k: "MV3", v: "Manifest version" },
-            ].map((s) => (
-              <div key={s.v}>
-                <div className="mono text-2xl text-[var(--text)] font-bold tabular">{s.k}</div>
-                <div className="text-[11px] uppercase tracking-[0.16em] text-[var(--muted-2)] mt-1">{s.v}</div>
-              </div>
-            ))}
-          </div>
         </div>
 
-        <ChicagoMap addressEntered={!!location?.address} scanning={scanning} />
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-[var(--muted)]">
+          <span className="inline-flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5 text-[var(--green)]" /> Public data only · no logins required</span>
+          <span className="inline-flex items-center gap-1.5"><Radar className="w-3.5 h-3.5 text-[var(--cobalt)]" /> Block-level pricing</span>
+          <span className="inline-flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-[var(--cobalt)]" /> AI item-matching</span>
+        </div>
+
+        <div className="mt-12 grid grid-cols-3 max-w-md mx-auto gap-6">
+          {[
+            { k: "<2s", v: "Cross-platform compare" },
+            { k: "10%+", v: "Gouging threshold" },
+            { k: "MV3", v: "Manifest version" },
+          ].map((s) => (
+            <div key={s.v}>
+              <div className="mono text-2xl text-[var(--text)] font-bold tabular">{s.k}</div>
+              <div className="text-[11px] uppercase tracking-[0.16em] text-[var(--muted-2)] mt-1">{s.v}</div>
+            </div>
+          ))}
+        </div>
       </div>
       <div className="tick-bar max-w-[1320px] mx-auto" />
     </section>
@@ -274,113 +271,6 @@ function SearchHero({ onSearch, location, scanning }) {
           <button onClick={() => setShowLocationToast(false)} className="text-[var(--muted-2)] hover:text-[var(--text)]"><X className="w-4 h-4" /></button>
         </div>
       )}
-    </div>
-  );
-}
-
-function ChicagoMap({ addressEntered, scanning }) {
-  // Stylized abstract Chicago grid + 3 platform pins that merge into one Cobalt pin once an address is entered
-  return (
-    <div data-testid="hero-visual" className="relative fade-up">
-      <div className="absolute -inset-6 bg-gradient-to-br from-[var(--cobalt-soft)] to-transparent blur-2xl rounded-3xl" />
-      <div className="relative rounded-2xl border border-[var(--border-2)] bg-white p-4 sm:p-6 shadow-[0_24px_60px_-20px_rgba(11,19,64,.20)]">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2 text-xs text-[var(--muted)]">
-            <Radar className="w-3.5 h-3.5 text-[var(--cobalt)]" />
-            <span>Chicago · Loop & River North</span>
-          </div>
-          <Pill tone={addressEntered ? "cobalt" : "muted"} className="!text-[10px]">
-            {addressEntered ? <><Check className="w-3 h-3" /> Zone locked</> : <><MapPin className="w-3 h-3" /> Awaiting address</>}
-          </Pill>
-        </div>
-
-        <div className={`relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-[var(--surface-2)] ${addressEntered ? "merge-active" : ""}`}>
-          <svg viewBox="0 0 400 300" className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(11,19,64,.06)" strokeWidth="1" />
-              </pattern>
-              <linearGradient id="riverG" x1="0" x2="1" y1="0" y2="1">
-                <stop offset="0" stopColor="#A9C4FF" stopOpacity=".6" />
-                <stop offset="1" stopColor="#3D5AFE" stopOpacity=".3" />
-              </linearGradient>
-              <radialGradient id="zoneG" cx="50%" cy="50%" r="50%">
-                <stop offset="0" stopColor="#3D5AFE" stopOpacity=".22" />
-                <stop offset="1" stopColor="#3D5AFE" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-            <rect width="400" height="300" fill="url(#grid)" />
-            {/* Stylized Chicago River */}
-            <path d="M 0 130 Q 80 140 140 130 T 260 110 Q 330 95 400 100" stroke="url(#riverG)" strokeWidth="6" fill="none" strokeLinecap="round" />
-            <path d="M 200 0 L 200 130" stroke="url(#riverG)" strokeWidth="5" fill="none" />
-            {/* Major streets */}
-            <g stroke="rgba(11,19,64,.14)" strokeWidth="1.4">
-              <line x1="0" y1="60" x2="400" y2="60" />
-              <line x1="0" y1="200" x2="400" y2="200" />
-              <line x1="0" y1="240" x2="400" y2="240" />
-              <line x1="120" y1="0" x2="120" y2="300" />
-              <line x1="280" y1="0" x2="280" y2="300" />
-            </g>
-            {/* Lake Michigan hint on the right */}
-            <rect x="370" y="0" width="30" height="300" fill="rgba(61,90,254,.08)" />
-            <text x="378" y="160" fill="rgba(11,19,64,.35)" fontSize="9" fontFamily="JetBrains Mono">LAKE</text>
-            {/* Center zone halo when locked */}
-            {addressEntered && <circle cx="200" cy="155" r="80" fill="url(#zoneG)" />}
-          </svg>
-
-          {/* Platform pins absolutely positioned */}
-          <Pin className="pin-dd absolute" style={{ left: "14%", top: "20%" }} color="#ef2a44" label="DD" />
-          <Pin className="pin-ue absolute" style={{ left: "70%", top: "22%" }} color="#06c167" label="UE" />
-          <Pin className="pin-gh absolute" style={{ left: "44%", top: "70%" }} color="#f63440" label="GH" />
-
-          {/* Final unified DunaSavvy pin */}
-          <div className="pin-final pin-float absolute" style={{ left: "calc(50% - 22px)", top: "calc(50% - 26px)" }}>
-            <div className="relative">
-              <div className="absolute -inset-3 rounded-full bg-[var(--cobalt)]/25 blur-md" />
-              <div className="relative w-11 h-11 rounded-full bg-[var(--cobalt)] flex items-center justify-center text-white shadow-[0_10px_30px_var(--cobalt-glow)] border-2 border-white">
-                <Zap className="w-5 h-5" strokeWidth={2.5} />
-              </div>
-              <div className="mx-auto -mt-1 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[10px] border-t-[var(--cobalt)] drop-shadow-md" />
-            </div>
-          </div>
-
-          {scanning && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="relative w-2 h-2 rounded-full bg-[var(--cobalt)]">
-                <span className="scan-ring" />
-                <span className="scan-ring" />
-                <span className="scan-ring" />
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="mt-4 grid grid-cols-3 gap-2 text-[11px]">
-          {[
-            { k: "doordash", n: "DoorDash", c: "#ef2a44" },
-            { k: "ubereats", n: "Uber Eats", c: "#06c167" },
-            { k: "grubhub",  n: "Grubhub",  c: "#f63440" },
-          ].map((p) => (
-            <div key={p.k} className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-[var(--surface-2)] border border-[var(--border)]">
-              <span className="w-2 h-2 rounded-full" style={{ background: p.c }} />
-              <span className="text-[var(--muted)]">{p.n}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Pin({ className = "", style, color, label }) {
-  return (
-    <div className={`pin-float ${className}`} style={style}>
-      <div className="relative">
-        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-[10px] font-extrabold tracking-tight border-2 border-white shadow-[0_6px_18px_rgba(11,19,64,.2)]" style={{ background: color }}>
-          {label}
-        </div>
-        <div className="mx-auto -mt-1 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px]" style={{ borderTopColor: color }} />
-      </div>
     </div>
   );
 }
@@ -702,361 +592,6 @@ function CartSection({ data }) {
   );
 }
 
-function ArbitrageMap({ data }) {
-  const [itemIdx, setItemIdx] = useState(0);
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  if (!data?.columns?.length) return null;
-
-  const ddCart = data.columns.find((c) => c.platform === "doordash");
-  const items = ddCart?.items || [];
-  if (!items.length) return null;
-
-  const idx = Math.min(itemIdx, items.length - 1);
-  const anchorName = items[idx].name;
-
-  // Same-index item across platforms (demo data is aligned)
-  const platformPoints = data.columns.map((c) => {
-    const it = c.items[idx];
-    return {
-      platform: c.platform,
-      label: PLATFORMS[c.platform].label,
-      color: PLATFORMS[c.platform].color,
-      itemName: it?.name || "—",
-      price: it?.price ?? null,
-      eta: c.eta_minutes,
-      available: c.available,
-      auth: c.auth_required,
-    };
-  });
-
-  const valid = platformPoints.filter((p) => typeof p.price === "number" && p.available);
-  const prices = valid.map((p) => p.price);
-  const minPrice = prices.length ? Math.min(...prices) : 0;
-  const maxPrice = prices.length ? Math.max(...prices) : 0;
-  const spread = +(maxPrice - minPrice).toFixed(2);
-  const median = prices.length ? prices.slice().sort((a, b) => a - b)[Math.floor(prices.length / 2)] : 0;
-  const cheapest = valid.find((p) => p.price === minPrice);
-  const priciest = valid.find((p) => p.price === maxPrice);
-
-  // Geographic node positions on the SVG (1200x600 viewport)
-  // Tuned to look like a Loop / River-North / West-Loop spread
-  const RESTAURANT = { x: 615, y: 322, label: "Lou Malnati's Pizzeria", neighborhood: "The Loop", lat: 41.8819, lng: -87.6304 };
-  const NODES = {
-    doordash:  { x: 940, y: 192, neighborhood: "River North",     lat: 41.8924, lng: -87.6336 },
-    ubereats:  { x: 268, y: 252, neighborhood: "West Loop",       lat: 41.8826, lng: -87.6478 },
-    grubhub:   { x: 740, y: 498, neighborhood: "South Loop",      lat: 41.8606, lng: -87.6196 },
-  };
-
-  // Build a smooth quadratic curve from restaurant to each platform node
-  const curve = (a, b) => {
-    const cx = (a.x + b.x) / 2 + (b.y < a.y ? 60 : -40);
-    const cy = (a.y + b.y) / 2 + (b.x < a.x ? -60 : 40);
-    return `M ${a.x} ${a.y} Q ${cx} ${cy} ${b.x} ${b.y}`;
-  };
-
-  const fmtCoord = (v) => v.toFixed(4);
-
-  return (
-    <section id="arbitrage" className="max-w-[1320px] mx-auto px-8 pb-16">
-      <div className="flex items-end justify-between flex-wrap gap-4 mb-6">
-        <div>
-          <Pill tone="cobalt" className="mb-3"><Crosshair className="w-3 h-3" /> Live arbitrage</Pill>
-          <h2 className="text-3xl font-extrabold tracking-tight">The Arbitrage Map</h2>
-          <p className="text-[var(--muted)] mt-2 max-w-2xl text-sm">
-            Same dish, three platforms, three prices. Watch the spread move block-by-block as
-            DoorDash, Uber Eats, and Grubhub fight for the same order.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] uppercase tracking-[0.18em] text-[var(--muted-2)]">Item</span>
-          <select
-            data-testid="arb-item-select"
-            value={idx}
-            onChange={(e) => setItemIdx(Number(e.target.value))}
-            className="bg-white border border-[var(--border)] text-sm px-3 py-2 rounded-lg outline-none focus:border-[var(--cobalt)] max-w-[280px]"
-          >
-            {items.map((it, i) => (
-              <option key={i} value={i}>{it.name}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div data-testid="arbitrage-map" className="relative rounded-3xl border border-[var(--border-2)] bg-white overflow-hidden shadow-[0_24px_60px_-30px_rgba(11,19,64,.25)]">
-        {/* Top header strip */}
-        <div className="flex flex-wrap items-center gap-4 justify-between px-6 py-4 border-b border-[var(--border)] bg-gradient-to-r from-white via-[var(--surface-2)] to-white">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-[var(--cobalt)] flex items-center justify-center text-white shrink-0">
-              <Crosshair className="w-5 h-5" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-sm font-bold text-[var(--text)] truncate">{anchorName}</div>
-              <div className="text-[11px] text-[var(--muted)] flex items-center gap-2">
-                <MapPin className="w-3 h-3" /> {RESTAURANT.label} · {RESTAURANT.neighborhood}
-                <span className="hidden md:inline mono text-[var(--muted-2)]">{fmtCoord(RESTAURANT.lat)}°N, {fmtCoord(Math.abs(RESTAURANT.lng))}°W</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <ArbStat label="Best price" value={fmt$(minPrice)} tone="green" />
-            <ArbStat label="Spread" value={fmt$(spread)} tone="cobalt" />
-            <ArbStat label="Median" value={fmt$(median)} tone="muted" />
-            <ArbStat label="Updated" value={`${tick % 60}s ago`} tone="muted" mono />
-          </div>
-        </div>
-
-        {/* Map canvas */}
-        <div className="relative">
-          {/* Animated horizontal scan line for "live" feel */}
-          <div className="absolute inset-y-0 left-0 right-0 overflow-hidden pointer-events-none">
-            <div className="scan-line absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-[rgba(61,90,254,.08)] to-transparent" />
-          </div>
-
-          <svg viewBox="0 0 1200 600" className="w-full block" style={{ height: "min(640px, 60vw)" }} xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="arb-grid" width="48" height="48" patternUnits="userSpaceOnUse">
-                <path d="M 48 0 L 0 0 0 48" fill="none" stroke="rgba(11,19,64,.05)" strokeWidth="1" />
-              </pattern>
-              <pattern id="arb-grid-fine" width="12" height="12" patternUnits="userSpaceOnUse">
-                <path d="M 12 0 L 0 0 0 12" fill="none" stroke="rgba(11,19,64,.025)" strokeWidth="0.5" />
-              </pattern>
-              <linearGradient id="arb-river" x1="0" x2="1" y1="0" y2="0">
-                <stop offset="0" stopColor="#A9C4FF" stopOpacity=".5" />
-                <stop offset=".5" stopColor="#3D5AFE" stopOpacity=".4" />
-                <stop offset="1" stopColor="#A9C4FF" stopOpacity=".5" />
-              </linearGradient>
-              <radialGradient id="arb-zone" cx="50%" cy="50%" r="50%">
-                <stop offset="0" stopColor="#3D5AFE" stopOpacity=".18" />
-                <stop offset="1" stopColor="#3D5AFE" stopOpacity="0" />
-              </radialGradient>
-              {Object.entries(PLATFORMS).map(([k, p]) => (
-                <radialGradient key={k} id={`halo-${k}`} cx="50%" cy="50%" r="50%">
-                  <stop offset="0" stopColor={p.color} stopOpacity=".55" />
-                  <stop offset="1" stopColor={p.color} stopOpacity="0" />
-                </radialGradient>
-              ))}
-            </defs>
-
-            {/* Base */}
-            <rect width="1200" height="600" fill="url(#arb-grid-fine)" />
-            <rect width="1200" height="600" fill="url(#arb-grid)" />
-
-            {/* Lake Michigan ribbon */}
-            <rect x="1110" y="0" width="90" height="600" fill="rgba(61,90,254,.08)" />
-            <text x="1130" y="320" fill="rgba(11,19,64,.32)" fontSize="11" fontFamily="JetBrains Mono" letterSpacing="2">LAKE  MICHIGAN</text>
-
-            {/* Chicago River — main branch + south branch */}
-            <path d="M 0 280 Q 200 290 360 280 T 700 240 Q 850 220 1110 215" stroke="url(#arb-river)" strokeWidth="9" fill="none" strokeLinecap="round" />
-            <path d="M 600 280 L 600 600" stroke="url(#arb-river)" strokeWidth="7" fill="none" />
-
-            {/* Major streets — Madison, Roosevelt, Halsted, State, Michigan Ave */}
-            <g stroke="rgba(11,19,64,.10)" strokeWidth="1.4">
-              <line x1="0" y1="120" x2="1110" y2="120" />
-              <line x1="0" y1="400" x2="1110" y2="400" />
-              <line x1="0" y1="500" x2="1110" y2="500" />
-              <line x1="200" y1="0" x2="200" y2="600" />
-              <line x1="850" y1="0" x2="850" y2="600" />
-            </g>
-
-            {/* Highway I-90/94 — diagonal */}
-            <line x1="60" y1="600" x2="900" y2="0" stroke="rgba(11,19,64,.08)" strokeWidth="3" strokeDasharray="6 8" />
-
-            {/* Neighborhood labels */}
-            <g fill="rgba(11,19,64,.45)" fontSize="10" fontFamily="JetBrains Mono" letterSpacing="1.5">
-              <text x="220" y="150" >WEST LOOP</text>
-              <text x="730" y="150" >RIVER NORTH</text>
-              <text x="430" y="350" >THE LOOP</text>
-              <text x="700" y="540" >SOUTH LOOP</text>
-              <text x="80"  y="500" >LITTLE ITALY</text>
-            </g>
-
-            {/* Restaurant zone halo */}
-            <circle cx={RESTAURANT.x} cy={RESTAURANT.y} r="120" fill="url(#arb-zone)" />
-
-            {/* Price-flow arcs from restaurant -> each platform */}
-            {platformPoints.map((p) => {
-              const node = NODES[p.platform];
-              const isCheapest = p === cheapest;
-              const isPriciest = p === priciest && spread > 0.5;
-              const stroke = !p.available ? "rgba(11,19,64,.18)" : isCheapest ? "var(--green)" : isPriciest ? "var(--amber)" : p.color;
-              const dash = isCheapest ? "10 6" : isPriciest ? "4 6" : "8 8";
-              return (
-                <g key={p.platform}>
-                  <path
-                    d={curve(RESTAURANT, node)}
-                    fill="none"
-                    stroke={stroke}
-                    strokeOpacity={p.available ? 0.85 : 0.35}
-                    strokeWidth={isCheapest ? 3.5 : 2}
-                    strokeDasharray={dash}
-                    className={isCheapest ? "arb-flow-fast" : "arb-flow"}
-                    strokeLinecap="round"
-                  />
-                </g>
-              );
-            })}
-
-            {/* Restaurant central node */}
-            <g>
-              <circle cx={RESTAURANT.x} cy={RESTAURANT.y} r="14" className="halo-ripple" fill="rgba(61,90,254,.45)" />
-              <circle cx={RESTAURANT.x} cy={RESTAURANT.y} r="22" fill="white" stroke="var(--cobalt)" strokeWidth="2" />
-              <circle cx={RESTAURANT.x} cy={RESTAURANT.y} r="12" fill="var(--cobalt)" />
-              <path d={`M ${RESTAURANT.x - 4} ${RESTAURANT.y - 4} L ${RESTAURANT.x + 4} ${RESTAURANT.y} L ${RESTAURANT.x - 4} ${RESTAURANT.y + 4} Z`} fill="white" />
-            </g>
-
-            {/* Platform endpoint nodes */}
-            {platformPoints.map((p) => {
-              const n = NODES[p.platform];
-              const isCheapest = p === cheapest;
-              const ring = !p.available ? "rgba(11,19,64,.25)" : isCheapest ? "var(--green)" : p.color;
-              return (
-                <g key={p.platform} data-testid={`arb-node-${p.platform}`}>
-                  {/* halo */}
-                  <circle cx={n.x} cy={n.y} r="44" fill={`url(#halo-${p.platform})`} opacity={isCheapest ? 1 : 0.6} />
-                  {/* ring */}
-                  <circle cx={n.x} cy={n.y} r="22" fill="white" stroke={ring} strokeWidth={isCheapest ? 3 : 2} />
-                  <circle cx={n.x} cy={n.y} r="11" fill={p.color} className={isCheapest ? "node-pulse" : ""} />
-                  <text x={n.x} y={n.y + 4} fontSize="10" fontFamily="Plus Jakarta Sans" fontWeight="800" textAnchor="middle" fill="white">
-                    {p.platform === "doordash" ? "DD" : p.platform === "ubereats" ? "UE" : "GH"}
-                  </text>
-                </g>
-              );
-            })}
-
-            {/* Floating price labels per platform */}
-            {platformPoints.map((p) => {
-              const n = NODES[p.platform];
-              if (typeof p.price !== "number") return null;
-              const isCheapest = p === cheapest;
-              const labelW = 130, labelH = 60;
-              // Position label offset from node (push outward)
-              const lx = n.x < 600 ? n.x - labelW - 18 : n.x + 18;
-              const ly = n.y - labelH / 2;
-              return (
-                <g key={p.platform + "-lbl"} className="price-tick">
-                  <rect x={lx} y={ly} width={labelW} height={labelH} rx="10" fill="white" stroke={isCheapest ? "var(--green)" : "rgba(11,19,64,.14)"} strokeWidth={isCheapest ? "2" : "1"} filter="drop-shadow(0 6px 14px rgba(11,19,64,.10))" />
-                  <text x={lx + 12} y={ly + 18} fontSize="9" fontFamily="JetBrains Mono" letterSpacing="1.5" fill="rgba(11,19,64,.5)">
-                    {p.label.toUpperCase()}
-                  </text>
-                  <text x={lx + 12} y={ly + 40} fontSize="20" fontFamily="JetBrains Mono" fontWeight="700" fill={isCheapest ? "var(--green)" : "var(--text)"}>
-                    {fmt$(p.price)}
-                  </text>
-                  {isCheapest && (
-                    <g>
-                      <rect x={lx + labelW - 38} y={ly + 6} width="32" height="14" rx="7" fill="var(--green)" />
-                      <text x={lx + labelW - 22} y={ly + 16} fontSize="8" fontFamily="Plus Jakarta Sans" fontWeight="800" letterSpacing="1.2" textAnchor="middle" fill="white">BEST</text>
-                    </g>
-                  )}
-                  <text x={lx + 12} y={ly + 53} fontSize="9" fontFamily="JetBrains Mono" fill="rgba(11,19,64,.5)">
-                    ETA {p.eta || "—"} min
-                  </text>
-                </g>
-              );
-            })}
-
-            {/* Compass */}
-            <g transform="translate(48, 48)">
-              <circle r="22" fill="white" stroke="rgba(11,19,64,.15)" />
-              <path d="M 0 -14 L 4 0 L 0 14 L -4 0 Z" fill="var(--cobalt)" />
-              <text y="-26" textAnchor="middle" fontSize="9" fontFamily="JetBrains Mono" fill="rgba(11,19,64,.6)" fontWeight="700">N</text>
-            </g>
-
-            {/* Lat/Lng readout (BL corner) */}
-            <g fontFamily="JetBrains Mono" fontSize="10" fill="rgba(11,19,64,.55)">
-              <text x="36" y="568">{fmtCoord(RESTAURANT.lat)}°N</text>
-              <text x="36" y="582">{fmtCoord(Math.abs(RESTAURANT.lng))}°W</text>
-            </g>
-            {/* Scale bar */}
-            <g transform="translate(1000, 568)" stroke="rgba(11,19,64,.5)">
-              <line x1="0" y1="0" x2="80" y2="0" strokeWidth="1.5" />
-              <line x1="0" y1="-4" x2="0" y2="4" strokeWidth="1.5" />
-              <line x1="80" y1="-4" x2="80" y2="4" strokeWidth="1.5" />
-              <text x="40" y="14" textAnchor="middle" fontSize="9" fontFamily="JetBrains Mono" fill="rgba(11,19,64,.5)">~1.0 mi</text>
-            </g>
-          </svg>
-
-          {/* Floating arbitrage callout (top-right) */}
-          {cheapest && spread > 0 && (
-            <div className="absolute top-5 right-5 max-w-[260px] rounded-2xl border border-[var(--green)]/40 bg-white shadow-[0_18px_40px_-12px_rgba(22,163,74,.30)] overflow-hidden">
-              <div className="px-4 py-3 bg-gradient-to-br from-[var(--green-soft)] to-white">
-                <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] font-bold text-[var(--green)]">
-                  <TrendingDown className="w-3 h-3" /> Arbitrage detected
-                </div>
-                <div className="mt-1 font-bold text-[var(--text)]">Order via {cheapest.label}</div>
-                <div className="mt-2 flex items-end gap-2">
-                  <span className="mono text-2xl font-extrabold text-[var(--green)] tabular">{fmt$(cheapest.price)}</span>
-                  <span className="text-[11px] text-[var(--muted)] mb-1">vs {fmt$(maxPrice)} on {priciest?.label}</span>
-                </div>
-                <div className="mt-2 text-[11px] text-[var(--muted)] flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3 text-[var(--amber)]" />
-                  Save <span className="mono font-semibold text-[var(--text)] mx-1">{fmt$(spread)}</span> on this item
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Bottom-left meta panel */}
-          <div className="absolute bottom-5 left-5 hidden md:flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-white border border-[var(--border)] shadow-[0_8px_20px_-8px_rgba(11,19,64,.18)]">
-            <Layers className="w-4 h-4 text-[var(--cobalt)]" />
-            <div className="text-xs text-[var(--muted)]">
-              <span className="text-[var(--text)] font-semibold">3 platforms</span> · 1 item · live spread
-            </div>
-            <div className="w-px h-4 bg-[var(--border)]" />
-            <div className="flex items-center gap-1 text-xs text-[var(--muted)]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--cobalt)] animate-pulse" /> Streaming
-            </div>
-          </div>
-        </div>
-
-        {/* Live ticker */}
-        <div className="relative overflow-hidden border-t border-[var(--border)] bg-[var(--surface-2)]">
-          <div className="ticker-track flex gap-10 whitespace-nowrap py-2.5 text-xs font-medium text-[var(--muted)] mono tabular">
-            {Array.from({ length: 2 }).map((_, dup) => (
-              <div key={dup} className="flex items-center gap-10 px-6">
-                {platformPoints.map((p, i) => (
-                  <span key={i} className="inline-flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: p.color }} />
-                    <span style={{ color: p.color }}>{p.label.toUpperCase()}</span>
-                    <span className="text-[var(--text)] font-bold">{typeof p.price === "number" ? fmt$(p.price) : "—"}</span>
-                    <span className={`text-[10px] ${p === cheapest ? "text-[var(--green)]" : p === priciest && spread > 0.5 ? "text-[var(--amber)]" : "text-[var(--muted-2)]"}`}>
-                      {p === cheapest ? "▼ best" : p === priciest && spread > 0.5 ? "▲ +" + (((p.price - median) / median) * 100).toFixed(1) + "%" : ""}
-                    </span>
-                  </span>
-                ))}
-                <span className="inline-flex items-center gap-2 text-[var(--cobalt)]">
-                  <Compass className="w-3 h-3" /> SPREAD <span className="text-[var(--text)] font-bold">{fmt$(spread)}</span>
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <Activity className="w-3 h-3 text-[var(--cobalt)]" /> CHICAGO · LOOP
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ArbStat({ label, value, tone = "muted", mono }) {
-  const toneCls = tone === "green" ? "border-[var(--green)]/30 text-[var(--green)] bg-[var(--green-soft)]"
-                  : tone === "cobalt" ? "border-[var(--cobalt)]/30 text-[var(--cobalt)] bg-[var(--cobalt-soft)]"
-                  : "border-[var(--border)] text-[var(--text)] bg-white";
-  return (
-    <div className={`rounded-xl border px-3 py-1.5 ${toneCls}`}>
-      <div className="text-[9px] uppercase tracking-[0.18em] text-[var(--muted-2)] font-bold">{label}</div>
-      <div className={`text-sm font-extrabold ${mono ? "mono tabular" : ""}`}>{value}</div>
-    </div>
-  );
-}
-
 function ScraperHealthSection() {
   const [health, setHealth] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1270,7 +805,6 @@ export default function App() {
       <Hero onScrollToEngine={onScrollToEngine} onSearch={onSearch} location={location} scanning={scanning} />
       <FeatureRow />
       <EngineSection data={data} loading={loading} error={error} location={location} />
-      <ArbitrageMap data={data} />
       <ScraperHealthSection />
       <CartSection data={data} />
       <InstallSection />
