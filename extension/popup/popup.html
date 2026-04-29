@@ -2,39 +2,98 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>DunaSavvy</title>
+  <title>DunaSavvy — Food, smarter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" />
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
-  <header class="topbar">
+  <!-- Top brand bar -->
+  <header class="brandbar">
     <div class="brand">
-      <span class="dot"></span>
-      <span class="brand-name">DunaSavvy</span>
-      <span class="brand-tag">Price Engine</span>
+      <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+      <div>
+        <div class="brand-name">DunaSavvy</div>
+        <div class="brand-tag">Delivery price engine</div>
+      </div>
     </div>
-    <button id="refresh" class="btn-ghost" title="Re-run comparison">Re-run</button>
+    <button id="reset" class="ghost-btn" title="Reset cart"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
   </header>
 
-  <div id="address-banner" class="banner banner-ok" hidden>
-    <span class="banner-title"></span>
-    <span class="banner-sub"></span>
+  <!-- Hero search section -->
+  <section class="hero">
+    <div class="kicker">
+      <span class="kicker-dot"></span>
+      Live engine · Claude Sonnet 4.5
+    </div>
+    <h1>Where do you want<br/><span class="accent">food, smarter?</span></h1>
+    <p class="lede">Type your address. We scan <b>DoorDash</b>, <b>Uber Eats</b>, and <b>Grubhub</b> for the cheapest landed cost.</p>
+
+    <!-- Mode tabs -->
+    <div class="tabs" role="tablist">
+      <button class="tab is-active" data-mode="address" role="tab">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+        Address
+      </button>
+      <button class="tab" data-mode="restaurant" role="tab">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M5 9v11h14V9"/><path d="M9 22v-6h6v6"/></svg>
+        Restaurant
+      </button>
+    </div>
+
+    <!-- Search bar -->
+    <div id="search-shell" class="search-shell">
+      <div class="search-row">
+        <span class="search-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg></span>
+        <input id="query" type="text" placeholder="Enter your delivery address" autocomplete="off" />
+        <button id="submit" class="cta-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span id="submit-text">Find Food</span>
+        </button>
+      </div>
+      <ul id="suggestions" class="suggestions" hidden></ul>
+    </div>
+
+    <div class="trust">
+      <span><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 9.5-8 10-4.5-.5-8-5-8-10V6l8-4z"/><polyline points="9 12 11 14 15 10"/></svg> Public data only</span>
+      <span><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3D5AFE" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/></svg> Block-level</span>
+      <span><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3D5AFE" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 14 9 22 9 16 14 18 22 12 18 6 22 8 14 2 9 10 9 12 2"/></svg> AI matched</span>
+    </div>
+  </section>
+
+  <!-- Address / status banner (only when relevant) -->
+  <div id="banner" class="banner" hidden>
+    <span class="banner-icon"></span>
+    <div>
+      <div class="banner-title"></div>
+      <div class="banner-sub"></div>
+    </div>
   </div>
 
-  <main id="grid" class="grid"></main>
+  <!-- Winner strip -->
+  <div id="winner-strip" class="winner-strip" hidden></div>
+
+  <!-- Stacked results -->
+  <main id="results" class="results">
+    <div class="empty">
+      <div class="empty-circle">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3D5AFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+      </div>
+      <div class="empty-title">Enter an address to begin</div>
+      <div class="empty-sub">Or open a delivery site and add items — DunaSavvy will scrape the cart automatically.</div>
+    </div>
+  </main>
+
+  <!-- Quick links -->
+  <div class="links">
+    <a href="https://www.doordash.com" target="_blank" data-platform="doordash">DoorDash</a>
+    <a href="https://www.ubereats.com" target="_blank" data-platform="ubereats">Uber Eats</a>
+    <a href="https://www.grubhub.com" target="_blank" data-platform="grubhub">Grubhub</a>
+  </div>
 
   <footer class="foot">
-    <div id="winner-strip" class="winner-strip" hidden></div>
-    <div class="links">
-      <a id="open-doordash" href="https://www.doordash.com" target="_blank">DoorDash</a>
-      <a id="open-ubereats" href="https://www.ubereats.com" target="_blank">Uber Eats</a>
-      <a id="open-grubhub" href="https://www.grubhub.com" target="_blank">Grubhub</a>
-    </div>
-    <button id="reset" class="btn-ghost-sm">Reset cart</button>
-    <p class="disclaimer">
-      DunaSavvy is an independent price-comparison tool and is <strong>not affiliated with, endorsed by, or sponsored by</strong>
-      DoorDash, Uber Eats, or Grubhub. All trademarks and product names are the property of their respective owners.
-      Prices and item names are referenced under nominative fair use solely to help you compare the cost of identical orders.
-    </p>
+    DunaSavvy is an independent price-comparison tool and is <b>not affiliated with, endorsed by, or sponsored by</b> DoorDash, Uber Eats, or Grubhub. All trademarks are the property of their respective owners. Prices are referenced under nominative fair use to help you compare equivalent orders.
   </footer>
 
   <script type="module" src="popup.js"></script>
