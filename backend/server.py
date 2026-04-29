@@ -43,6 +43,11 @@ class ScrapedItem(BaseModel):
     quantity: int = 1
     options: Optional[str] = ""
 
+class Promotion(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    label: str = ""
+    discount: float = 0.0
+
 class PlatformCart(BaseModel):
     model_config = ConfigDict(extra="ignore")
     platform: Platform
@@ -52,10 +57,14 @@ class PlatformCart(BaseModel):
     subtotal: float
     service_fee: float = 0.0
     delivery_fee: float = 0.0
+    small_order_fee: float = 0.0
     tax: float = 0.0
     eta_minutes: Optional[int] = None
     available: bool = True
     auth_required: bool = False
+    member_pass: Optional[str] = None      # "DashPass" | "Uber One" | "Grubhub+" | None
+    member_free_delivery: bool = False     # True if member_pass made delivery $0
+    promotion: Optional[Promotion] = None  # e.g. {label:"$5 off $20", discount:5.0}
 
 class CompareRequest(BaseModel):
     session_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -84,7 +93,14 @@ class ComparisonResult(BaseModel):
 
 # ---------- Utility logic ----------
 def compute_total_landed(cart: PlatformCart) -> float:
-    return round(cart.subtotal + cart.service_fee + cart.delivery_fee + cart.tax, 2)
+    """Four-pillar landed cost:
+        ((subtotal − promotion.discount) + service_fee + delivery_fee + small_order_fee + tax)
+    Promotions are applied to subtotal BEFORE fees so percentage-based service fees
+    track the discounted base.
+    """
+    promo_discount = cart.promotion.discount if cart.promotion else 0.0
+    discounted = max(cart.subtotal - promo_discount, 0.0)
+    return round(discounted + cart.service_fee + cart.delivery_fee + cart.small_order_fee + cart.tax, 2)
 
 
 _STOPWORDS = {"the", "and", "with", "for", "large", "small", "medium", "regular", "pack", "size"}
@@ -166,11 +182,15 @@ def build_columns(carts: List[PlatformCart], gouging_flags: List[Dict[str, Any]]
             "subtotal": round(c.subtotal, 2),
             "service_fee": round(c.service_fee, 2),
             "delivery_fee": round(c.delivery_fee, 2),
+            "small_order_fee": round(c.small_order_fee, 2),
             "tax": round(c.tax, 2),
             "total_landed": compute_total_landed(c),
             "eta_minutes": c.eta_minutes,
             "available": c.available,
             "auth_required": c.auth_required,
+            "member_pass": c.member_pass,
+            "member_free_delivery": c.member_free_delivery,
+            "promotion": c.promotion.model_dump() if c.promotion else None,
             "gouging_items": flag_idx.get(c.platform, []),
         })
     return cols
@@ -398,6 +418,15 @@ async def demo_comparison_post(scenario: Optional[str] = None):
     elif scenario == "gouging":
         carts[2].items[0].price = 41.99
         carts[2].subtotal = 64.69
+    elif scenario == "membership":
+        # DoorDash user has DashPass → free delivery
+        carts[0].member_pass = "DashPass"
+        carts[0].member_free_delivery = True
+        carts[0].delivery_fee = 0.0
+        # Uber Eats has a $5 off $30 promo on the public storefront
+        carts[1].promotion = Promotion(label="$5 off $30+", discount=5.0)
+        # Grubhub kicks in a small-order fee since the order is just under their threshold
+        carts[2].small_order_fee = 2.49
     req = CompareRequest(anchor_platform="doordash", carts=carts)
     return await compare(req)
 

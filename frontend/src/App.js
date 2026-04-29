@@ -58,6 +58,7 @@ function Header({ onScenario, scenario, onRefresh, loading }) {
             className="bg-[var(--surface)] border border-[var(--border)] text-sm px-3 py-2 rounded-lg outline-none focus:border-[var(--teal-500)]"
           >
             <option value="default">Default scenario</option>
+            <option value="membership">Membership + promo</option>
             <option value="gouging">Gouging detected</option>
             <option value="address_mismatch">Address mismatch</option>
             <option value="auth_required">Auth required</option>
@@ -341,6 +342,11 @@ function ColumnCard({ col, isWinner, gougingItems }) {
           <ShieldCheck className="w-3 h-3" /> Sign in needed
         </div>
       )}
+      {col.member_pass && !col.auth_required && (
+        <div data-testid={`member-${col.platform}`} className="absolute -top-3 right-5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--cobalt)] text-white text-[11px] font-bold uppercase tracking-wider shadow-[0_4px_14px_var(--cobalt-glow)]">
+          <Sparkles className="w-3 h-3" /> {col.member_pass}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <div className="text-[11px] uppercase tracking-[0.18em] font-bold" style={{ color: PLATFORMS[col.platform].color }}>
@@ -371,13 +377,32 @@ function ColumnCard({ col, isWinner, gougingItems }) {
       </div>
 
       <div className="border-t border-dashed border-[var(--border)] pt-3 flex flex-col gap-1.5 text-xs text-[var(--muted)]">
+        {col.promotion && col.promotion.discount > 0 && (
+          <div className="flex justify-between" data-testid={`promo-${col.platform}`}>
+            <span className="inline-flex items-center gap-1.5 text-[var(--green)]">
+              <Sparkles className="w-3 h-3" /> {col.promotion.label}
+            </span>
+            <span className="mono tabular text-[var(--green)] font-semibold">−{fmt$(col.promotion.discount)}</span>
+          </div>
+        )}
         {[
           ["Subtotal", col.subtotal],
           ["Service fee", col.service_fee],
-          ["Delivery", col.delivery_fee],
+          ["Delivery", col.delivery_fee, col.member_free_delivery ? "Free · " + (col.member_pass || "Member") : null],
+          ...(col.small_order_fee > 0 ? [["Small order fee", col.small_order_fee]] : []),
           ["Tax", col.tax],
-        ].map(([k, v]) => (
-          <div key={k} className="flex justify-between"><span>{k}</span><span className="mono tabular text-[var(--text)]">{fmt$(v)}</span></div>
+        ].map(([k, v, badge]) => (
+          <div key={k} className="flex justify-between">
+            <span className="inline-flex items-center gap-2">
+              {k}
+              {badge && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[var(--cobalt-soft)] text-[var(--cobalt)] text-[9px] font-bold uppercase tracking-wider border border-[var(--cobalt)]/20">
+                  <Check className="w-2.5 h-2.5" />{badge}
+                </span>
+              )}
+            </span>
+            <span className={`mono tabular ${k === "Delivery" && col.member_free_delivery ? "text-[var(--green)] line-through" : "text-[var(--text)]"}`}>{fmt$(v)}</span>
+          </div>
         ))}
       </div>
 
