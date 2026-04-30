@@ -1,0 +1,63 @@
+name: Deploy DunaSavvy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+
+      - name: Install deps
+        working-directory: frontend
+        run: yarn install --frozen-lockfile
+
+      - name: Build React site
+        working-directory: frontend
+        env:
+          # Point the built site at your deployed FastAPI backend.
+          # Set this as a repo secret named BACKEND_URL.
+          REACT_APP_BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          DISABLE_ESLINT_PLUGIN: "true"
+          CI: "false"
+        run: yarn build
+
+      - name: Prepare Pages artifact
+        run: |
+          mkdir -p _site
+          cp -r frontend/build/. _site/
+          touch _site/.nojekyll
+          # Custom domain — remove this line if you don't use one
+          echo "dunasavvy.com" > _site/CNAME
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
