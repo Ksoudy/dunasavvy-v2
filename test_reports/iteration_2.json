@@ -1,0 +1,34 @@
+{
+  "summary": "Frontend-only regression for address autosuggest + auto-fire nearby + restaurant mode. React UI no longer crashes (state vars declared). Address autosuggest, suggestion click auto-fires /api/nearby returning 7 cards for Chicago address, scenario selector re-runs compare without console errors, Find Food submits with typed-only address, location-toast surfaces when restaurant submitted without address via Find Food button. One real functional bug: pressing Enter inside restaurant-mode input is a no-op, so feature #4 (type 'malnati' + Enter) silently keeps stale nearby data — Find Food button works fine for the same flow.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "SearchHero.onKeyDown (App.js line 191-197)",
+        "issue": "Early return `if (mode !== 'address') return;` blocks Enter key from calling submit() when mode==='restaurant'. As a result, typing 'malnati' and pressing Enter does nothing — nearby list keeps previous address-mode results, location-toast never fires on Enter. Clicking Find Food works correctly (verified: returns `1 restaurants matching \"malnati\"` and shows location-toast when no address). Fix: only gate the ArrowUp/ArrowDown/suggestions logic behind the mode check, NOT Enter.",
+        "selector": "[data-testid='hero-address-input']",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_dunasavvy.py"],
+  "action_items": [
+    "Fix SearchHero.onKeyDown so Enter triggers submit() in BOTH address and restaurant modes. Suggested patch: remove the blanket `if (mode !== 'address') return;` and instead only short-circuit ArrowUp/ArrowDown/Escape when mode !== 'address'. Keep the Enter branch outside that guard.",
+    "Optional: when user switches to restaurant mode and `query` (address) is already set, also auto-focus the restaurant input and/or show a helper chip — currently it silently reuses the old address which is the right behavior but visually ambiguous."
+  ],
+  "critical_code_review_comments": [
+    "SearchHero.onKeyDown has combined concerns: address-suggestion navigation + submit. Split them so Enter always submits and arrow keys only steer suggestions.",
+    "App.onSearch always calls fetchNearby(payload) even if payload has no lat/lon AND no restaurant — fetchNearby then early-returns with setNearby(null), effectively clearing the nearby section on a Find-Food-without-suggestion click. Acceptable but worth a comment.",
+    "NearbyResults header uses `data.q` truthy check to flip wording; empty-string q from restaurant-search could flip it accidentally. Backend returns q=query-string (never empty because router requires it), so current behavior is fine but add a defensive `typeof data.q === 'string' && data.q.length` for robustness.",
+    "Still outstanding from iteration_1: /app/extension folder referenced by Install CTA does not exist in repo. Unchanged this iteration."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not retested (frontend-only request)", "frontend": "85% (6 of 7 required flows work; Enter-in-restaurant-mode broken)"},
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All 7 review-request flows were exercised against https://ghost-cart-1.preview.emergentagent.com. Confirmed: hero renders, Nominatim autosuggest returns 2 items for '120 W Madison St, Chicago', clicking suggestion-0 auto-fires /api/nearby and renders 7 nearby cards, Find Food in restaurant mode returns '1 restaurants matching \"malnati\"' with 1 nearby card, location-toast appears when restaurant mode submitted without address via Find Food click, scenario selector cycles all 5 values with no console/page errors, Find Food with typed-but-not-picked address submits and engine re-renders 3 columns. Only failing flow: Enter key in restaurant mode is a no-op (documented above).",
+  "rca of the issue": "RCA: In /app/frontend/src/App.js line 192 the keydown handler has `if (mode !== 'address') return;` which short-circuits Enter, ArrowUp/Down and Escape when mode==='restaurant'. Enter therefore never reaches the submit() call. Reproduction: load page → click mode-restaurant → type any string → press Enter → nothing happens. Mitigation: move the early-return so it only guards the arrow/escape branches, e.g. `if (e.key === 'Enter') { e.preventDefault(); submit(); return; } if (mode !== 'address') return; /* arrow/escape handling */`."
+}

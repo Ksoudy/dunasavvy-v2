@@ -639,12 +639,16 @@ function NearbyResults({ data, loading, error, onPick }) {
           <Pill tone="cobalt" className="mb-3"><MapPin className="w-3 h-3" /> Nearby restaurants</Pill>
           <h2 className="text-3xl font-extrabold tracking-tight">Around your zone</h2>
           <p className="text-[var(--muted)] mt-2 max-w-xl text-sm">
-            {data ? `${data.count} spots within ${data.radius_mi} mi · sorted by distance, then cheapest delivery fee.` : "Computing…"}
+            {data
+              ? (data.q
+                  ? `${data.count} restaurants matching "${data.q}" · ranked by match score, then cheapest delivery fee.`
+                  : `${data.count} spots within ${data.radius_mi} mi · sorted by distance, then cheapest delivery fee.`)
+              : "Computing…"}
           </p>
         </div>
-        {data && (
+        {data && data.lat != null && data.lon != null && (
           <div className="text-xs text-[var(--muted)] mono">
-            {data.lat?.toFixed(4)}°N, {Math.abs(data.lon)?.toFixed(4)}°W
+            {data.lat.toFixed(4)}°N, {Math.abs(data.lon).toFixed(4)}°W
           </div>
         )}
       </div>
@@ -676,7 +680,7 @@ function NearbyCard({ r, onPick, delay = 0 }) {
           <div className="text-base font-bold text-[var(--text)] truncate">{r.name}</div>
           <div className="text-xs text-[var(--muted)] mt-0.5 truncate">{r.cuisine}</div>
           <div className="text-[11px] text-[var(--muted-2)] mt-1 inline-flex items-center gap-1.5">
-            <MapPin className="w-3 h-3" /> {r.neighborhood} · {r.distance_mi} mi
+            <MapPin className="w-3 h-3" /> {r.neighborhood}{r.distance_mi != null ? ` · ${r.distance_mi} mi` : (r.match_score != null ? ` · ${Math.round(r.match_score * 100)}% match` : "")}
           </div>
         </div>
         <div className="text-right shrink-0">
@@ -891,6 +895,10 @@ export default function App() {
   const [scenario, setScenario] = useState("default");
   const [location, setLocation] = useState(null);
   const [scanning, setScanning] = useState(false);
+  const [extensionId, setExtensionId] = useState(null);
+  const [nearby, setNearby] = useState(null);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [nearbyError, setNearbyError] = useState("");
 
   const load = async (sc = scenario) => {
     setLoading(true); setError("");
@@ -908,11 +916,71 @@ export default function App() {
   useEffect(() => { load("default"); /* eslint-disable-next-line */ }, []);
   useEffect(() => { load(scenario); /* eslint-disable-next-line */ }, [scenario]);
 
+  // Detect the DunaSavvy Chrome extension. bridge.js drops a <meta> marker
+  // on page load and also fires a 'dunasavvy:extension-ready' event.
+  useEffect(() => {
+    const readFromMeta = () => {
+      const m = document.querySelector('meta[name="dunasavvy-extension"]');
+      if (m?.content) {
+        const id = m.content.split("|")[0];
+        if (id) setExtensionId(id);
+      }
+    };
+    readFromMeta();
+    const onReady = (e) => {
+      if (e?.detail?.extensionId) setExtensionId(e.detail.extensionId);
+    };
+    window.addEventListener("dunasavvy:extension-ready", onReady);
+    return () => window.removeEventListener("dunasavvy:extension-ready", onReady);
+  }, []);
+
   const onScrollToEngine = () => document.getElementById("engine")?.scrollIntoView({ behavior: "smooth" });
+
+  // Call the extension (when installed) to run the scrape "as the user";
+  // fall back to calling the backend directly when the extension isn't loaded.
+  const askExtension = (message) => new Promise((resolve) => {
+    if (!extensionId || typeof window?.chrome?.runtime?.sendMessage !== "function") {
+      resolve(null);
+      return;
+    }
+    try {
+      const timer = setTimeout(() => resolve(null), 8000);
+      window.chrome.runtime.sendMessage(extensionId, message, (resp) => {
+        clearTimeout(timer);
+        if (window.chrome?.runtime?.lastError) { resolve(null); return; }
+        resolve(resp || null);
+      });
+    } catch { resolve(null); }
+  });
+
+  const fetchNearby = async ({ lat, lon, restaurant }) => {
+    setNearbyLoading(true); setNearbyError("");
+    try {
+      if (restaurant) {
+        const viaExt = await askExtension({ type: "RESTAURANT_SEARCH", q: restaurant, lat, lon });
+        if (viaExt?.results) { setNearby({ ...viaExt, lat, lon, radius_mi: viaExt.radius_mi || 6 }); return; }
+        const res = await axios.get(`${API}/restaurant-search`, { params: { q: restaurant, limit: 8 } });
+        setNearby({ ...res.data, lat: lat ?? null, lon: lon ?? null, radius_mi: res.data.radius_mi || 6 });
+        return;
+      }
+      if (lat == null || lon == null) { setNearby(null); return; }
+      const viaExt = await askExtension({ type: "NEARBY_SEARCH", lat, lon, radius_mi: 6 });
+      if (viaExt?.results) { setNearby(viaExt); return; }
+      const res = await axios.get(`${API}/nearby`, { params: { lat, lon, radius_mi: 6, limit: 12 } });
+      setNearby(res.data);
+    } catch (e) {
+      setNearbyError(`Nearby search failed — ${e?.message || e}`);
+      setNearby(null);
+    } finally {
+      setNearbyLoading(false);
+    }
+  };
 
   const onSearch = async (payload) => {
     setLocation(payload);
     setScanning(true);
+    // Auto-fire the nearby/restaurant scan in parallel with the main compare.
+    fetchNearby(payload);
     try {
       const res = await axios.post(`${API}/search`, payload);
       setTimeout(() => {
