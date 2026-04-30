@@ -2,7 +2,7 @@
 // Coordinates scraping events, virtual-cart state, cross-platform fetches,
 // and the "Good Citizen" robots.txt gate.
 
-import { BACKEND_URL, API, PLATFORMS, FETCH_DELAY_MS, FETCH_JITTER_MS } from "./config.js";
+import { BACKEND_URL, PLATFORMS, FETCH_DELAY_MS, FETCH_JITTER_MS, getAPI } from "./config.js";
 
 const SESSION_KEY = "duna_session_id";
 const ROBOTS_CACHE_KEY = "duna_robots_cache";
@@ -119,6 +119,7 @@ async function ensureOffscreen() {
 async function pushCartToBackend(cart) {
   const sid = await getSessionId();
   try {
+    const API = await getAPI();
     const res = await fetch(`${API}/cart/ingest`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -155,6 +156,7 @@ async function runComparison() {
   }
 
   await jitterDelay();
+  const API = await getAPI();
   const res = await fetch(`${API}/compare`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -165,7 +167,11 @@ async function runComparison() {
   return json;
 }
 
-// Cross-site offscreen fetch (gated by robots.txt)
+// Cross-site offscreen fetch (gated by robots.txt). Routes the message ONLY to
+// the offscreen document — NOT the service worker — to avoid the bug where the
+// SW's own onMessage listener catches the broadcast first and short-circuits with
+// `unknown message`. We accomplish this by tagging the message with a `target`
+// field that the SW listener early-returns on.
 async function offscreenFetch(url) {
   if (!(await isUrlAllowed(url))) {
     return { ok: false, blocked_by: "robots.txt", url };
@@ -173,11 +179,21 @@ async function offscreenFetch(url) {
   await ensureOffscreen();
   await jitterDelay();
   return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ type: "FETCH_AND_PARSE", url }, (resp) => resolve(resp || { ok: false, error: "no response" }));
+    chrome.runtime.sendMessage(
+      { type: "FETCH_AND_PARSE", target: "offscreen", url },
+      (resp) => {
+        if (chrome.runtime.lastError) return resolve({ ok: false, error: chrome.runtime.lastError.message });
+        resolve(resp || { ok: false, error: "no response" });
+      }
+    );
   });
 }
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  // Hard early-return on offscreen-targeted messages so the offscreen doc is the
+  // sole responder. Without this, the SW would beat the offscreen reply.
+  if (msg?.target === "offscreen") return false;
+
   (async () => {
     try {
       if (msg?.type === "SCRAPED_CART") {

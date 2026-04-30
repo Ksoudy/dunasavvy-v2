@@ -7,7 +7,12 @@ import {
   Search, ShieldCheck, Sparkles, Store, Timer, TrendingDown, Truck, Wifi, X, Zap,
 } from "lucide-react";
 
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const RAW_BACKEND = process.env.REACT_APP_BACKEND_URL;
+// Defensive: if the build was published without REACT_APP_BACKEND_URL set
+// (e.g. GH Pages without the BACKEND_URL secret) we fall back to same-origin
+// "/api" — which gives a useful 404 instead of "undefined/api/...".
+const API = `${RAW_BACKEND || ""}/api`;
+const BACKEND_MISSING = !RAW_BACKEND;
 
 const PLATFORMS = {
   doordash: { label: "DoorDash", short: "DD", color: "#ef2a44" },
@@ -826,6 +831,11 @@ export default function App() {
 
   return (
     <div className="App grain min-h-screen">
+      {BACKEND_MISSING && (
+        <div data-testid="backend-missing-banner" className="bg-[var(--amber)] text-white text-xs font-semibold text-center py-2 px-4">
+          Backend URL not configured. Set <span className="mono bg-black/15 px-1.5 py-0.5 rounded">BACKEND_URL</span> as a repo secret in GitHub Actions, then redeploy. The buttons below won't load real data until then.
+        </div>
+      )}
       <Header onScenario={setScenario} scenario={scenario} onRefresh={() => load(scenario)} loading={loading} />
       <Hero onScrollToEngine={onScrollToEngine} onSearch={onSearch} location={location} scanning={scanning} />
       <FeatureRow />

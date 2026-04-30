@@ -1,7 +1,7 @@
 // DunaSavvy Popup — "Food, Smarter" cobalt UI logic
 // Talks to background.js (price engine) and falls back to /api/search when no scraped cart exists.
 
-import { API, PLATFORMS } from "../config.js";
+import { PLATFORMS, getAPI } from "../config.js";
 
 // ---------- DOM ----------
 const $ = (sel) => document.querySelector(sel);
@@ -209,16 +209,18 @@ async function runSearch(payload) {
   hideBanner(); els.winnerStrip.hidden = true;
   els.results.innerHTML = `<div class="empty"><div class="empty-circle"></div><div class="empty-title">Scanning DoorDash · Uber Eats · Grubhub…</div><div class="empty-sub">Computing landed cost across platforms.</div></div>`;
   try {
+    const API = await getAPI();
     const res = await fetch(`${API}/search`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     setTimeout(() => { renderResults(data); setScanning(false); }, 900);
   } catch (e) {
     setScanning(false);
-    renderResults({ error: "Engine unreachable: " + e.message });
+    renderResults({ error: "Engine unreachable: " + e.message + ". Set chrome.storage.local.duna_backend_url if your backend moved." });
   }
 }
 
