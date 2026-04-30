@@ -28,9 +28,19 @@
     "https://*.doordash.com/*",
     "https://*.ubereats.com/*",
     "https://*.grubhub.com/*",
+    "https://nominatim.openstreetmap.org/*",
     "*://localhost/*",
-    "https://*.preview.emergentagent.com/*"
+    "https://*.preview.emergentagent.com/*",
+    "https://dunasavvy.com/*"
   ],
+  "externally_connectable": {
+    "matches": [
+      "https://dunasavvy.com/*",
+      "https://*.dunasavvy.com/*",
+      "https://*.preview.emergentagent.com/*",
+      "http://localhost:3000/*"
+    ]
+  },
   "content_scripts": [
     {
       "matches": [
@@ -40,6 +50,16 @@
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://dunasavvy.com/*",
+        "https://*.dunasavvy.com/*",
+        "https://*.preview.emergentagent.com/*",
+        "http://localhost:3000/*"
+      ],
+      "js": ["bridge.js"],
+      "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [

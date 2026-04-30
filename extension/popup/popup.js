@@ -75,15 +75,18 @@ async function fetchSuggestions(q) {
     suggestions = []; renderSuggestions(); return;
   }
   try {
-    const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=5&lang=en`);
+    // Nominatim (OpenStreetMap) — free, no key. Respect their UA + rate-limit policy.
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=jsonv2&limit=5&addressdetails=1`, {
+      headers: { "Accept-Language": "en" },
+    });
     const data = await res.json();
-    suggestions = (data.features || []).map((f) => {
-      const p = f.properties || {};
-      const parts = [p.name, p.street && `${p.housenumber || ""} ${p.street}`.trim(), p.city, p.state, p.postcode, p.country].filter(Boolean);
+    suggestions = (data || []).map((f) => {
+      const a = f.address || {};
+      const short = [a.house_number && a.road ? `${a.house_number} ${a.road}` : a.road, a.city || a.town || a.village, a.state].filter(Boolean).join(", ");
       return {
-        label: parts.join(", "),
-        short: [p.name || p.street, p.city, p.state].filter(Boolean).join(", "),
-        coords: f.geometry?.coordinates || null,
+        label: f.display_name,
+        short: short || f.display_name.split(",").slice(0, 2).join(","),
+        coords: [parseFloat(f.lon), parseFloat(f.lat)],
       };
     });
     activeIdx = suggestions.length ? 0 : -1;

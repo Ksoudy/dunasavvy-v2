@@ -83,7 +83,7 @@ function Header({ onScenario, scenario, onRefresh, loading }) {
   );
 }
 
-function Hero({ onScrollToEngine, onSearch, location, scanning }) {
+function Hero({ onScrollToEngine, onSearch, location, scanning, extensionId }) {
   return (
     <section className="relative overflow-hidden">
       <div className="max-w-[920px] mx-auto px-8 pt-16 pb-12 text-center fade-up">
@@ -105,8 +105,13 @@ function Hero({ onScrollToEngine, onSearch, location, scanning }) {
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-[var(--muted)]">
           <span className="inline-flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5 text-[var(--green)]" /> Public data only · no logins required</span>
-          <span className="inline-flex items-center gap-1.5"><Radar className="w-3.5 h-3.5 text-[var(--cobalt)]" /> Block-level pricing</span>
+          <span className="inline-flex items-center gap-1.5"><Radar className="w-3.5 h-3.5 text-[var(--cobalt)]" /> Nominatim geocoding</span>
           <span className="inline-flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-[var(--cobalt)]" /> AI item-matching</span>
+          {extensionId && (
+            <span data-testid="extension-detected" className="inline-flex items-center gap-1.5 text-[var(--cobalt)] font-semibold">
+              <Check className="w-3.5 h-3.5" /> Extension active
+            </span>
+          )}
         </div>
 
         <div className="mt-12 grid grid-cols-3 max-w-md mx-auto gap-6">
@@ -139,15 +144,17 @@ function SearchHero({ onSearch, location, scanning }) {
   const fetchSuggestions = async (q) => {
     if (!q || q.length < 3) { setSuggestions([]); return; }
     try {
-      const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=5&lang=en`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=jsonv2&limit=5&addressdetails=1`, {
+        headers: { "Accept-Language": "en" },
+      });
       const data = await res.json();
-      const items = (data.features || []).map((f) => {
-        const p = f.properties || {};
-        const parts = [p.name, p.street && `${p.housenumber || ""} ${p.street}`.trim(), p.city, p.state, p.postcode, p.country].filter(Boolean);
+      const items = (data || []).map((f) => {
+        const a = f.address || {};
+        const short = [a.house_number && a.road ? `${a.house_number} ${a.road}` : a.road, a.city || a.town || a.village, a.state].filter(Boolean).join(", ");
         return {
-          label: parts.join(", "),
-          short: [p.name || p.street, p.city, p.state].filter(Boolean).join(", "),
-          coords: f.geometry?.coordinates || null, // [lon, lat]
+          label: f.display_name,
+          short: short || f.display_name.split(",").slice(0, 2).join(","),
+          coords: [parseFloat(f.lon), parseFloat(f.lat)], // [lon, lat]
         };
       });
       setSuggestions(items);
@@ -622,6 +629,96 @@ function CartSection({ data }) {
   );
 }
 
+function NearbyResults({ data, loading, error, onPick }) {
+  if (!data && !loading && !error) return null;
+  const results = data?.results || [];
+  return (
+    <section id="nearby" className="max-w-[1320px] mx-auto px-8 pb-12">
+      <div className="flex items-end justify-between flex-wrap gap-4 mb-6">
+        <div>
+          <Pill tone="cobalt" className="mb-3"><MapPin className="w-3 h-3" /> Nearby restaurants</Pill>
+          <h2 className="text-3xl font-extrabold tracking-tight">Around your zone</h2>
+          <p className="text-[var(--muted)] mt-2 max-w-xl text-sm">
+            {data ? `${data.count} spots within ${data.radius_mi} mi · sorted by distance, then cheapest delivery fee.` : "Computing…"}
+          </p>
+        </div>
+        {data && (
+          <div className="text-xs text-[var(--muted)] mono">
+            {data.lat?.toFixed(4)}°N, {Math.abs(data.lon)?.toFixed(4)}°W
+          </div>
+        )}
+      </div>
+      {error && <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-700">{error}</div>}
+      {loading && !results.length && (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[0,1,2,3,4,5].map(i => <div key={i} className="rounded-2xl border border-[var(--border)] bg-white h-[180px] animate-pulse" />)}
+        </div>
+      )}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {results.map((r, i) => <NearbyCard key={r.id} r={r} onPick={onPick} delay={i*60} />)}
+      </div>
+    </section>
+  );
+}
+
+function NearbyCard({ r, onPick, delay = 0 }) {
+  const order = ["doordash", "ubereats", "grubhub"];
+  return (
+    <button
+      type="button"
+      data-testid={`nearby-${r.id}`}
+      onClick={() => onPick?.(r)}
+      style={{ animationDelay: `${delay}ms` }}
+      className="text-left fade-up rounded-2xl border border-[var(--border)] bg-white p-5 hover:border-[var(--cobalt)] hover:shadow-[0_18px_40px_-18px_rgba(61,90,254,.30)] transition-all cursor-pointer"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-base font-bold text-[var(--text)] truncate">{r.name}</div>
+          <div className="text-xs text-[var(--muted)] mt-0.5 truncate">{r.cuisine}</div>
+          <div className="text-[11px] text-[var(--muted-2)] mt-1 inline-flex items-center gap-1.5">
+            <MapPin className="w-3 h-3" /> {r.neighborhood} · {r.distance_mi} mi
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          <div className="text-[9px] uppercase tracking-[0.18em] text-[var(--muted-2)] font-bold">Cheapest fee</div>
+          <div className="mono text-2xl font-extrabold text-[var(--green)] tabular leading-none mt-1">${r.cheapest_delivery_fee.toFixed(2)}</div>
+          <div className="text-[10px] uppercase tracking-widest mt-1" style={{ color: PLATFORMS[r.cheapest_platform]?.color }}>{PLATFORMS[r.cheapest_platform]?.label}</div>
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {order.map(plat => {
+          const p = r.platforms[plat];
+          if (!p) return null;
+          const isWinner = plat === r.cheapest_platform && p.available;
+          return (
+            <div
+              key={plat}
+              className={`rounded-lg border px-2 py-2 text-center ${
+                !p.available ? "border-[var(--border)] bg-[var(--surface-2)] opacity-50" :
+                isWinner ? "border-[var(--green)]/50 bg-[var(--green-soft)]" :
+                "border-[var(--border)] bg-[var(--surface-2)]"
+              }`}
+            >
+              <div className="text-[9px] uppercase tracking-widest font-bold" style={{ color: PLATFORMS[plat].color }}>{PLATFORMS[plat].label}</div>
+              <div className={`mono text-sm font-bold mt-0.5 tabular ${isWinner ? "text-[var(--green)]" : "text-[var(--text)]"}`}>
+                {p.available ? `$${p.delivery_fee.toFixed(2)}` : "—"}
+              </div>
+              <div className="text-[10px] text-[var(--muted-2)] mt-0.5 inline-flex items-center gap-1 justify-center">
+                <Timer className="w-2.5 h-2.5" /> {p.eta_minutes ? `${p.eta_minutes}m` : "—"}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {r.fee_spread > 0 && (
+        <div className="mt-3 text-[11px] text-[var(--muted)]">
+          <span className="mono font-semibold text-[var(--text)]">${r.fee_spread.toFixed(2)}</span> fee spread across platforms
+        </div>
+      )}
+    </button>
+  );
+}
+
 function ScraperHealthSection() {
   const [health, setHealth] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -837,7 +934,8 @@ export default function App() {
         </div>
       )}
       <Header onScenario={setScenario} scenario={scenario} onRefresh={() => load(scenario)} loading={loading} />
-      <Hero onScrollToEngine={onScrollToEngine} onSearch={onSearch} location={location} scanning={scanning} />
+      <Hero onScrollToEngine={onScrollToEngine} onSearch={onSearch} location={location} scanning={scanning} extensionId={extensionId} />
+      <NearbyResults data={nearby} loading={nearbyLoading} error={nearbyError} onPick={(r) => document.getElementById("engine")?.scrollIntoView({ behavior: "smooth" })} />
       <FeatureRow />
       <EngineSection data={data} loading={loading} error={error} location={location} />
       <ScraperHealthSection />

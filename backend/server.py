@@ -508,6 +508,98 @@ async def scraper_health():
     return {"overall": overall, "platforms": results, "checked_at": datetime.now(timezone.utc).isoformat()}
 
 
+# ---------- Nearby restaurants & restaurant-name search ----------
+DIRECTORY: List[Dict[str, Any]] = [
+    {"id":"lou-malnatis-loop","name":"Lou Malnati's Pizzeria","cuisine":"Pizza · Deep Dish","lat":41.8819,"lon":-87.6304,"neighborhood":"The Loop","platforms":{
+        "doordash":  {"delivery_fee":2.99,"service_fee":4.99,"eta_minutes":42,"rating":4.7,"min_order":0,"available":True},
+        "ubereats":  {"delivery_fee":1.49,"service_fee":3.79,"eta_minutes":38,"rating":4.6,"min_order":0,"available":True},
+        "grubhub":   {"delivery_fee":3.99,"service_fee":5.49,"eta_minutes":51,"rating":4.5,"min_order":15.0,"available":True}}},
+    {"id":"portillos-river-north","name":"Portillo's","cuisine":"Hot Dogs · Italian Beef","lat":41.8924,"lon":-87.6336,"neighborhood":"River North","platforms":{
+        "doordash":  {"delivery_fee":0.99,"service_fee":4.49,"eta_minutes":28,"rating":4.8,"min_order":0,"available":True},
+        "ubereats":  {"delivery_fee":2.99,"service_fee":3.99,"eta_minutes":31,"rating":4.7,"min_order":0,"available":True},
+        "grubhub":   {"delivery_fee":4.49,"service_fee":4.99,"eta_minutes":36,"rating":4.6,"min_order":0,"available":True}}},
+    {"id":"girl-and-the-goat","name":"Girl & the Goat","cuisine":"American · Tapas","lat":41.8845,"lon":-87.6478,"neighborhood":"West Loop","platforms":{
+        "doordash":  {"delivery_fee":5.99,"service_fee":7.99,"eta_minutes":56,"rating":4.9,"min_order":25.0,"available":True},
+        "ubereats":  {"delivery_fee":3.99,"service_fee":5.99,"eta_minutes":48,"rating":4.9,"min_order":25.0,"available":True},
+        "grubhub":   {"delivery_fee":0.0, "service_fee":6.49,"eta_minutes":52,"rating":4.8,"min_order":30.0,"available":False}}},
+    {"id":"pequods-pizzeria","name":"Pequod's Pizza","cuisine":"Pizza · Caramelized Crust","lat":41.9209,"lon":-87.6488,"neighborhood":"Lincoln Park","platforms":{
+        "doordash":  {"delivery_fee":4.49,"service_fee":5.49,"eta_minutes":49,"rating":4.7,"min_order":0,"available":True},
+        "ubereats":  {"delivery_fee":2.99,"service_fee":4.99,"eta_minutes":44,"rating":4.6,"min_order":0,"available":True},
+        "grubhub":   {"delivery_fee":3.49,"service_fee":5.99,"eta_minutes":47,"rating":4.5,"min_order":0,"available":True}}},
+    {"id":"monteverde-westloop","name":"Monteverde","cuisine":"Italian · Pasta","lat":41.8834,"lon":-87.6440,"neighborhood":"West Loop","platforms":{
+        "doordash":  {"delivery_fee":3.99,"service_fee":6.49,"eta_minutes":51,"rating":4.8,"min_order":0,"available":True},
+        "ubereats":  {"delivery_fee":5.99,"service_fee":5.99,"eta_minutes":47,"rating":4.8,"min_order":0,"available":True},
+        "grubhub":   {"delivery_fee":2.49,"service_fee":6.99,"eta_minutes":54,"rating":4.7,"min_order":20.0,"available":True}}},
+    {"id":"au-cheval-westloop","name":"Au Cheval","cuisine":"Burgers · Diner","lat":41.8842,"lon":-87.6473,"neighborhood":"West Loop","platforms":{
+        "doordash":  {"delivery_fee":4.49,"service_fee":5.49,"eta_minutes":62,"rating":4.8,"min_order":0,"available":True},
+        "ubereats":  {"delivery_fee":2.49,"service_fee":4.99,"eta_minutes":55,"rating":4.8,"min_order":0,"available":True},
+        "grubhub":   {"delivery_fee":5.99,"service_fee":6.49,"eta_minutes":71,"rating":4.6,"min_order":15.0,"available":True}}},
+    {"id":"pizzeria-bebu-westloop","name":"Pizzeria Bebu","cuisine":"Pizza · Wood-Fired","lat":41.8911,"lon":-87.6557,"neighborhood":"Noble Square","platforms":{
+        "doordash":  {"delivery_fee":2.49,"service_fee":4.99,"eta_minutes":35,"rating":4.7,"min_order":0,"available":True},
+        "ubereats":  {"delivery_fee":3.49,"service_fee":4.49,"eta_minutes":31,"rating":4.7,"min_order":0,"available":True},
+        "grubhub":   {"delivery_fee":1.99,"service_fee":5.49,"eta_minutes":42,"rating":4.6,"min_order":0,"available":True}}},
+]
+
+
+def _haversine_mi(lat1, lon1, lat2, lon2) -> float:
+    import math
+    p1 = math.radians(lat1); p2 = math.radians(lat2)
+    dp = math.radians(lat2 - lat1); dl = math.radians(lon2 - lon1)
+    a = math.sin(dp/2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl/2) ** 2
+    return 3958.8 * (2 * math.atan2(math.sqrt(a), math.sqrt(1 - a)))
+
+
+def _decorate(r: Dict[str, Any]) -> Dict[str, Any]:
+    plats = r["platforms"]
+    avail = [p for p in plats.values() if p.get("available")]
+    fees = [p["delivery_fee"] for p in avail] or [0]
+    cheapest_fee = min(fees)
+    cheapest_plat = next((k for k, v in plats.items() if v.get("available") and v["delivery_fee"] == cheapest_fee), None)
+    spread = round(max(fees) - cheapest_fee, 2)
+    return {**r, "cheapest_platform": cheapest_plat, "cheapest_delivery_fee": cheapest_fee,
+            "max_delivery_fee": max(fees, default=0), "fee_spread": spread,
+            "platforms_available": len(avail)}
+
+
+@api.get("/nearby")
+async def nearby(lat: float, lon: float, radius_mi: float = 6.0, limit: int = 12):
+    rows = []
+    for r in DIRECTORY:
+        d = round(_haversine_mi(lat, lon, r["lat"], r["lon"]), 2)
+        if d > radius_mi:
+            continue
+        rows.append({**_decorate(r), "distance_mi": d})
+    rows.sort(key=lambda x: (x["distance_mi"], x["cheapest_delivery_fee"]))
+    return {"lat": lat, "lon": lon, "radius_mi": radius_mi,
+            "count": min(len(rows), limit), "results": rows[:limit],
+            "generated_at": datetime.now(timezone.utc).isoformat()}
+
+
+def _name_tokens(s: str) -> set:
+    cleaned = "".join(ch.lower() if ch.isalnum() or ch == " " else " " for ch in s)
+    return {w for w in cleaned.split() if len(w) >= 2}
+
+
+@api.get("/restaurant-search")
+async def restaurant_search(q: str, limit: int = 8):
+    qt = _name_tokens(q)
+    if not qt:
+        return {"q": q, "count": 0, "results": []}
+    rows = []
+    for r in DIRECTORY:
+        rt = _name_tokens(r["name"])
+        if not rt:
+            continue
+        inter = len(qt & rt); union = len(qt | rt) or 1
+        score = (inter / union) + (0.25 if q.lower() in r["name"].lower() else 0)
+        if score < 0.18:
+            continue
+        rows.append({**_decorate(r), "match_score": round(score, 3)})
+    rows.sort(key=lambda x: (-x["match_score"], x["cheapest_delivery_fee"]))
+    return {"q": q, "count": min(len(rows), limit), "results": rows[:limit]}
+
+
+
 # Mount router and middleware
 app.include_router(api)
 

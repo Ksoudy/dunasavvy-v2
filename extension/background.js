@@ -198,7 +198,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     try {
       if (msg?.type === "SCRAPED_CART") {
         const cart = msg.cart;
-        // Respect robots.txt — skip if the active page path is disallowed.
         const url = sender?.tab?.url || sender?.url;
         if (url && !(await isUrlAllowed(url))) {
           sendResponse({ ok: false, blocked_by: "robots.txt" });
@@ -210,8 +209,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         await pushCartToBackend(cart);
         sendResponse({ ok: true });
       } else if (msg?.type === "RUN_COMPARE") {
-        const result = await runComparison();
-        sendResponse(result);
+        sendResponse(await runComparison());
+      } else if (msg?.type === "NEARBY_SEARCH") {
+        sendResponse(await nearbySearch(msg.lat, msg.lon, msg.radius_mi || 6));
+      } else if (msg?.type === "RESTAURANT_SEARCH") {
+        sendResponse(await restaurantSearch(msg.q));
       } else if (msg?.type === "RESET_CART") {
         await chrome.storage.local.remove(["virtual_carts", "last_comparison"]);
         sendResponse({ ok: true });
@@ -224,6 +226,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         await chrome.storage.local.remove(ROBOTS_CACHE_KEY);
         const cache = await ensureRobotsFresh();
         sendResponse({ ok: true, cache });
+      } else if (msg?.type === "PING") {
+        sendResponse({ ok: true, version: chrome.runtime.getManifest().version });
       } else {
         sendResponse({ error: "unknown message" });
       }
@@ -233,6 +237,42 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   })();
   return true; // keep channel open
 });
+
+// External (web → extension) bridge — the dashboard at dunasavvy.com calls this
+// to ask the extension to run nearby/restaurant searches "as the user."
+chrome.runtime.onMessageExternal?.addListener((msg, _sender, sendResponse) => {
+  (async () => {
+    try {
+      if (msg?.type === "PING") return sendResponse({ ok: true, version: chrome.runtime.getManifest().version });
+      if (msg?.type === "NEARBY_SEARCH") return sendResponse(await nearbySearch(msg.lat, msg.lon, msg.radius_mi || 6));
+      if (msg?.type === "RESTAURANT_SEARCH") return sendResponse(await restaurantSearch(msg.q));
+      sendResponse({ error: "unknown external message" });
+    } catch (e) { sendResponse({ error: String(e) }); }
+  })();
+  return true;
+});
+
+// In production these would ask the offscreen doc to fetch the platforms'
+// nearby/search endpoints. Until those scrapers are stable, we delegate to
+// the FastAPI backend which returns a directory-derived response with the
+// same shape.
+async function nearbySearch(lat, lon, radius_mi) {
+  if (typeof lat !== "number" || typeof lon !== "number") return { error: "lat/lon required" };
+  await jitterDelay();
+  const API = await getAPI();
+  const res = await fetch(`${API}/nearby?lat=${lat}&lon=${lon}&radius_mi=${radius_mi}`);
+  if (!res.ok) return { error: `HTTP ${res.status}` };
+  return await res.json();
+}
+
+async function restaurantSearch(q) {
+  if (!q || !q.trim()) return { error: "query required" };
+  await jitterDelay();
+  const API = await getAPI();
+  const res = await fetch(`${API}/restaurant-search?q=${encodeURIComponent(q)}`);
+  if (!res.ok) return { error: `HTTP ${res.status}` };
+  return await res.json();
+}
 
 // Daily robots refresh via alarms (survives service-worker sleep)
 chrome.runtime.onInstalled.addListener(async () => {
