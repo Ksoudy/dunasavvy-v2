@@ -40,6 +40,10 @@ Build a Chrome Extension (Manifest V3) that acts as a real-time price-comparison
 - Typography: Plus Jakarta Sans (body) + JetBrains Mono (numbers)
 
 ## What's Implemented (2026-02)
+- ✅ **Nominatim autosuggest + auto-fire nearby (2026-02-30)** — Hero search hits `nominatim.openstreetmap.org`; clicking a suggestion OR pressing Enter auto-fires `/api/nearby` (and `/api/search`). Restaurant mode calls `/api/restaurant-search`. Results render in `NearbyResults` grid with distance or match-score badges.
+- ✅ **Extension bridge detection** — `App` listens for `dunasavvy:extension-ready` event + `<meta name="dunasavvy-extension">` marker from `extension/bridge.js`; shows `[data-testid='extension-detected']` "Extension active" pill when present. When installed, `fetchNearby` prefers `chrome.runtime.sendMessage(EXT_ID, {type:'NEARBY_SEARCH'|'RESTAURANT_SEARCH',...})` and falls back to the backend.
+- ✅ **Backend endpoints** — `GET /api/nearby?lat&lon&radius_mi&limit` (distance-sorted directory) and `GET /api/restaurant-search?q&limit` (token Jaccard + substring boost).
+
 - ✅ Backend with all 9 endpoints + Mongo persistence
 - ✅ AI fuzzy matching via Emergent LLM key (Claude Sonnet 4.5) with graceful fallback
 - ✅ Live `/api/demo-fuzzy-match` button in dashboard ("Run AI match")

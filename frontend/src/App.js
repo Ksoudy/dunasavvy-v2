@@ -189,10 +189,10 @@ function SearchHero({ onSearch, location, scanning }) {
   };
 
   const onKeyDown = (e) => {
+    if (e.key === "Enter") { e.preventDefault(); submit(); return; }
     if (mode !== "address") return;
     if (e.key === "ArrowDown") { e.preventDefault(); setActiveSuggestion((i) => Math.min(i + 1, suggestions.length - 1)); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setActiveSuggestion((i) => Math.max(i - 1, -1)); }
-    else if (e.key === "Enter") { e.preventDefault(); submit(); }
     else if (e.key === "Escape") setSuggestions([]);
   };
 
